@@ -2,7 +2,7 @@
 a bunch of experiments and benchmarks
 
 # Usage : 
-```
+```csharp
 [MonitorExecutionTime]
 public static int SumSync(int n, int k) {
     int res = 0;
