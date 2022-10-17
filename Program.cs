@@ -1,37 +1,26 @@
-﻿using System;
+﻿using static TestFunc;
 
-var (n, m) = (1, 10);
-foreach (int i in n..m)
-{
-    Console.WriteLine(i);
-}
+SumSync(0, 100);
+await SumAsync(0, 100);
 
-public static class RangeExtensions
-{
-    public static CustomEnumerator GetEnumerator(this Range range)
-    {
-        return new CustomEnumerator(range);
-    }
-}
+class TestFunc {
 
-public class CustomEnumerator
-{
-    private int start;
-    private int end;
-    private int current = 0;   
-
-    public CustomEnumerator(Range range)
-    {
-        if(range.Start.IsFromEnd || range.End.IsFromEnd)
-        {
-            throw new ArgumentException("Range must be from start");
+    [MonitorExecutionTime]
+    public static int SumSync(int n, int k) {
+        int res = 0;
+        for(int i = n; i < k; i++){
+            res += i;
         }
-
-        start = range.Start.Value;
-        end = range.End.Value + 1;
+        return res;
     }
 
-    public int Current => current;
-    public bool MoveNext()
-        => ++current <= end - start;
+    [MonitorExecutionTime]
+    public static async Task<int> SumAsync(int n, int k) {
+        int res = 0;
+        for(int i = n; i < k; i++){
+            await Task.Delay(10);
+            res += i;
+        }
+        return res;
+    }
 }
