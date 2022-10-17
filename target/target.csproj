@@ -8,6 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="benchmarkDotNet" Version="0.13.2" />
+    <ProjectReference Include="..\generator\generator.csproj" OutputItemType="Analyzer"/>
   </ItemGroup>
 </Project>
