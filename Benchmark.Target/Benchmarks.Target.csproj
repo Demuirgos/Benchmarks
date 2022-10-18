@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <LangVersion>latest</LangVersion>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+	  <ProjectReference Include="..\Benchmark.Shared\Benchmarks.Shared.csproj" />
+	  <ProjectReference Include="..\Benchmark.Generator\Benchmarks.Generator.csproj" 
+                      OutputItemType="Analyzer" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="PostSharp" Version="6.10.15" />
+	</ItemGroup>
+
+</Project>

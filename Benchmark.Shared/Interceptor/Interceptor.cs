@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Reflection;
 using PostSharp.Aspects;
 using System.Diagnostics;
@@ -6,15 +7,21 @@ using PostSharp.Serialization;
 using PostSharp.Extensibility;
 using System.ComponentModel;
 
+using Benchmarks.Models;
+
+namespace Benchmarks.Extensions;
+
+
 [PSerializable]
 public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
 {
+    public virtual void OnEmition(MethodBase args) {}
     public virtual void OnCompletion(ExecutionArgs args) {}
     public virtual void OnSuccess(ExecutionArgs args) {}
     public virtual void OnFailure(ExecutionArgs args) {}
     private bool isAsyncMode = false;
 
-    public sealed override void CompileTimeInitialize(MethodBase method, AspectInfo aspectInfo)
+    public override void CompileTimeInitialize(MethodBase method, AspectInfo aspectInfo)
     {
         var methodInfo = method as MethodInfo;
         if (methodInfo == null)
@@ -24,7 +31,7 @@ public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
 
         isAsyncMode =    methodInfo.ReturnType == typeof(Task) 
                     ||  (methodInfo.ReturnType.IsGenericType && methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>));
-
+        OnEmition(method);
         base.CompileTimeInitialize(method, aspectInfo);
     }
 
@@ -40,20 +47,26 @@ public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
             OnCompletion(new ExecutionArgs(args));
         } else {
             Console.WriteLine();
-            var task = (dynamic)args.ReturnValue;
+            var task = (Task)args.ReturnValue;
             args.ReturnValue = GetContinuation(args, task);
         }
     }
 
     private async  Task<TResult> GetContinuation<TResult>(MethodExecutionArgs args, Task<TResult> previousStateMachineTask)
-        => await previousStateMachineTask.ContinueWith(
+    {
+        Console.WriteLine($"GetContinuation<{typeof(TResult).Name}>");
+        return await previousStateMachineTask.ContinueWith(
             t => RunTaskInContext(t, args),
             TaskContinuationOptions.ExecuteSynchronously);
+    }
             
     private async  Task GetContinuation(MethodExecutionArgs args, Task previousStateMachineTask)
-        => await previousStateMachineTask.ContinueWith(
+    {
+        Console.WriteLine($"GetContinuation<>");
+        await previousStateMachineTask.ContinueWith(
             t => RunTaskInContext(t, args),
             TaskContinuationOptions.ExecuteSynchronously);
+    }
 
     
     private TResult? RunTaskInContext<TResult>(Task<TResult> previousStateMachineTask, MethodExecutionArgs args)
