@@ -14,7 +14,7 @@ public static int SumSync(int n, int k)
 }
 ```
 ```csharp
-[Monitor(InterceptionMode.ExecutionTime, LogDestination.Console, 30000)]
+[Monitor(InterceptionMode.CallCount, LogDestination.Console, 30000)]
 private static async Task<int> GetIntAsync(int i) {
     await Task.Delay(10);
     return i;
