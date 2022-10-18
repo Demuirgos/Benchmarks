@@ -8,7 +8,7 @@ using PostSharp.Extensibility;
 
 [PSerializable]
 [DebuggerStepThrough]
-[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Assembly)]
+[AttributeUsage(AttributeTargets.Method)]
 public class MonitorExecutionTimeAttribute : OnGeneralMethodBoundaryAspect {
     public override void OnEntry(MethodExecutionArgs args) {
         args.MethodExecutionTag = Stopwatch.StartNew();
