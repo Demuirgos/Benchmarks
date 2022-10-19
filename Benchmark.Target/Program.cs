@@ -6,10 +6,14 @@ using System.Reflection;
 using Plugin;
 using static TestFunc;
 
-int i = SumSync(0, 100);
-int j =  await SumAsync(0, 100);
+try
+{
+    int i = SumSync(0, 100);
+    int j =  await SumAsync(0, 100);
+    Console.WriteLine($"results : {i} == {j}");
+}
+catch { }
 
-Console.WriteLine($"results : {i} == {j}");
 
 var prometheusSinkType = typeof(Plugin.Metrics);
 foreach (var property in prometheusSinkType?.GetProperties(BindingFlags.Public | BindingFlags.Static))
@@ -18,7 +22,8 @@ foreach (var property in prometheusSinkType?.GetProperties(BindingFlags.Public |
     Console.WriteLine($"{property.Name} := {value}");
 }
 class TestFunc {
-    [Monitor(InterceptionMode.ExecutionTime, LogDestination.Prometheus)]
+
+    [Monitor(InterceptionMode.MetadataLog, LogDestination.Console)]
     public static int SumSync(int n, int k)
     {
         try
@@ -34,28 +39,22 @@ class TestFunc {
         }
     }
 
-    [Monitor(InterceptionMode.ExecutionTime, LogDestination.Prometheus)]
+    [Monitor(InterceptionMode.MetadataLog, LogDestination.Console)]
     public static async Task<int> SumAsync(int n, int k) {
-        try
+        int res = 0;
+        for (int i = n; i <= k; i++)
         {
-            int res = 0;
-            for (int i = n; i <= k; i++)
-            {
-                res += await GetIntAsync(i);
-            }
-            return res;
+            res += await GetIntAsync(i);
         }
-        catch { 
-            return 0;
-        }
+        return res;
     }
-
-    [Monitor(InterceptionMode.ExecutionTime, LogDestination.Console)]
+    [Monitor(InterceptionMode.CallCount, LogDestination.Prometheus)]
     private static int GetIntSync(int i)
     {
-        return (new Random()).Next(0, 50) == 1 ? throw new Exception("testing sync exceptions") : i;
+        return i;
     }
 
+    [Monitor(InterceptionMode.ExecutionTime, LogDestination.Prometheus)]
     private static async Task<int> GetIntAsync(int i) {
         await Task.Delay(10);
         return (new Random()).Next(0, 50) == 1 ? throw new Exception("testing async exceptions") : i;

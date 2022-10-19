@@ -65,11 +65,8 @@ public static partial class Metrics
         var allFunctionsInCompilationUnit = GetMarkedFunctionBy(context.Compilation);
         var allAttributesToBeEmited = GetTargetAttributesFrom(allFunctionsInCompilationUnit, context.Compilation);
 
-        if(allAttributesToBeEmited.Length > 0)
-        {
-            var classToEmitSourceCode = PartialMetrics(allAttributesToBeEmited);
-            context.AddSource("Metrics.g.cs", SourceText.From(classToEmitSourceCode, Encoding.UTF8));
-        }
+        var classToEmitSourceCode = PartialMetrics(allAttributesToBeEmited);
+        context.AddSource("Metrics.g.cs", SourceText.From(classToEmitSourceCode, Encoding.UTF8));
 
     }
 
@@ -114,16 +111,20 @@ public static partial class Metrics
                                     .ToArray();
                     if (isMonitor)
                     {
-                        var firstArg = Enum.Parse(typeof(InterceptionMode), args[0]);
-                        var SecndArg = Enum.Parse(typeof(LogDestination)  , args[1]);
+                        Enum.TryParse<InterceptionMode>(args[0], out var firstArg);
+                        Enum.TryParse<LogDestination>(args[1], out var SecndArg);
                         var targtArg = funcDef.Identifier.ToString();
+                        if(     firstArg is InterceptionMode.ExecutionTime or InterceptionMode.CallCount
+                            &&  SecndArg is LogDestination.Prometheus)
+                        {
+                            var prop = $"{targtArg}{firstArg}";
+                            var desc = $"{targtArg} {firstArg} Metrics";
+                            return new string[] { $"long", prop, desc };
 
-                        var type = firstArg is InterceptionMode.ExecutionTime or InterceptionMode.CallCount ? nameof(Int64) : nameof(String);
-                        var prop = $"{targtArg}{firstArg}";
-                        var desc = $"{targtArg} {firstArg} Metrics";
-                        return new string[] { $"{type}", prop, desc };
+                        }
                     } return Array.Empty<string>();
                 })
+                .Where(x => x.Length > 0)
                 .ToArray();
         })
         .Select(args =>

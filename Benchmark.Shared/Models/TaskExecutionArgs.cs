@@ -15,6 +15,7 @@ public enum MethodStatus {
     OnGoing   = 1 << 5, 
     Halted    = 1 << 6
 }
+public enum TimeUnit { Milliseconds, Seconds, Ticks }
 public enum LogDestination { Debug, Console, Prometheus, None }
 public enum InterceptionMode { ExecutionTime, CallCount, MetadataLog }
 public enum TaskFlowBehavior { Default, Continue, RethrowException, Return, ThrowException }

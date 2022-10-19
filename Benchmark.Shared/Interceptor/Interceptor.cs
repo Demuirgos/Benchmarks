@@ -15,7 +15,7 @@ namespace Benchmarks.Extensions;
 [PSerializable]
 public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
 {
-    private bool isAsyncMode = false;
+    protected bool IsAsyncMode { get; private set; } = false;
 
     public virtual void OnEmition(MethodBase args) {}
     public virtual void OnCompletion(ExecutionArgs args) {}
@@ -30,7 +30,7 @@ public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
             throw new Exception("MethodInfo is null");
         }
 
-        isAsyncMode =    methodInfo.ReturnType == typeof(Task) 
+        IsAsyncMode =    methodInfo.ReturnType == typeof(Task) 
                     ||  (methodInfo.ReturnType.IsGenericType && methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>));
         OnEmition(method);
         base.CompileTimeInitialize(method, aspectInfo);
@@ -43,8 +43,8 @@ public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
     
     public sealed override void OnExit(MethodExecutionArgs args)
     {
-        bool isEndOfStateMachine = isAsyncMode && !typeof(Task).IsAssignableFrom(args.ReturnValue.GetType()) || !isAsyncMode;
-        if(isEndOfStateMachine) {
+        bool isEndOfStateMachine = IsAsyncMode && !typeof(Task).IsAssignableFrom(args.ReturnValue.GetType()) || !IsAsyncMode;
+        if (isEndOfStateMachine) {
             OnCompletion(new ExecutionArgs(args));
         } else {
             Console.WriteLine();

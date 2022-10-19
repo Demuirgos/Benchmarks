@@ -23,29 +23,49 @@ public record MetricsMetadata<TResource> {
     public string MethodQualifiedName { get; set; }
     public long CallCount => MetricsMetadata.CallCountKeeper[MethodQualifiedName];
     public MethodStatus Status { get; set; }
-    public long ExecutionTime { get; set; }
-    public string StartTime  { get; set; }
-    public string FinishTime { get; set; }
+    public  long ExecutionTime { get; set; }
+    public DateTime StartTime  { get; set; }
+    public DateTime FinishTime { get; set; }
     public string ExceptionValue { get; set; }
 
-    public string ToString(InterceptionMode mode)
+    public string ToString(InterceptionMode mode, TimeUnit unit = TimeUnit.Milliseconds)
     {
         var sb = new StringBuilder();
-        sb.Append($"MethodQualifiedName = {MethodQualifiedName}, ");
+        sb.Append($"MethodName = {MethodQualifiedName}, ");
 
-        sb = mode switch
+        if (Status.HasFlag(MethodStatus.Completed))
         {
-            InterceptionMode.CallCount      => sb.Append($"CallCount = {CallCount}, "),
-            InterceptionMode.ExecutionTime  => sb.Append($"ExecutionTime = {ExecutionTime}, "),
-            InterceptionMode.MetadataLog    => sb.Append($"CallCount = {CallCount}, ")
-                                                 .Append($"ExecutionTime = {ExecutionTime}, ")
-                                                 .Append($"PeriodTime = from {StartTime} to {FinishTime}, "),
+            var timeUnit = unit switch
+            {
+                TimeUnit.Milliseconds => "ms",
+                TimeUnit.Seconds => "s",
+                _ => String.Empty
+            }; 
 
-        };
-        sb.Append($"Status = {Status & MethodStatus.Completed} | {Status & ~MethodStatus.Completed}, ");
+            sb = mode switch
+            {
+                InterceptionMode.CallCount      => sb.Append($"CallCount = {CallCount}, "),
+                InterceptionMode.ExecutionTime  => sb.Append($"ExecutionTime = {ExecutionTime}{timeUnit}, "),
+                InterceptionMode.MetadataLog    => sb.Append($"CallCount = {CallCount}, ExecutionTime = {ExecutionTime}{timeUnit}, ")
+                                                     .Append($"PeriodTime = from {StartTime.ToString("hh:mm:ss.fff tt")} to {FinishTime.ToString("hh:mm:ss.fff tt")}, "),
+            };
+
+        }
+
+        sb.Append("Status = "); var foundFlag = false;
+        foreach(var statusValue in Enum.GetValues<MethodStatus>())
+        {
+            if(Status.HasFlag(statusValue))
+            {
+                sb.Append($"{( foundFlag ? " | " : "" )} { statusValue }");
+                foundFlag = true;
+            }
+        }
+
         if(Status.HasFlag(MethodStatus.Failed) && !String.IsNullOrEmpty(ExceptionValue))
         {
-            sb.Append($"ExceptionValue = {ExceptionValue}");
+            sb.Append(", ");
+            sb.Append($"Exception = {ExceptionValue}");
         }
         return sb.ToString();
     }
@@ -59,6 +79,7 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
     private (Assembly Assembly, string Function) CallSourceType;
     private InterceptionMode InterceptionMode { get; set; } 
     private LogDestination LogDestination { get; set; }
+    private TimeUnit TimeUnit { get; set; }
     private int PeriodBetweenLogsWait { get; set; }
 
     private DateTime? previousLogTime;
@@ -82,9 +103,9 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
 
     private bool IsInitialized = false;
     private string PropertyName => $"{CallSourceType.Function}{InterceptionMode}";
-    public MonitorAttribute(InterceptionMode interceptionMode, LogDestination logDestination, int TicksWaitInBetweenLogs = 100) 
+    public MonitorAttribute(InterceptionMode interceptionMode, LogDestination logDestination, TimeUnit timeUnit = TimeUnit.Milliseconds ,int WaitInBetweenLogs = 100) 
     {
-        InterceptionMode = interceptionMode; LogDestination = logDestination; PeriodBetweenLogsWait = TicksWaitInBetweenLogs; 
+        InterceptionMode = interceptionMode; LogDestination = logDestination; PeriodBetweenLogsWait = WaitInBetweenLogs; TimeUnit = timeUnit;
 
     }
     public override void OnEntry(MethodExecutionArgs args) {
@@ -102,7 +123,7 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
         var AttachedLog = new MetricsMetadata<Stopwatch> {
             EmbeddedResource = new Stopwatch(),
             MethodQualifiedName = (args.Method as MethodInfo).Name,
-            StartTime = DateTime.Now.ToLongTimeString(),
+            StartTime = DateTime.Now,
             Status = MethodStatus.OnGoing,
             ExecutionTime = 0,
         };
@@ -114,7 +135,7 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
     public override void OnFailure(ExecutionArgs args)
     {
         var innerLogs = args.MethodExecutionTag as MetricsMetadata<Stopwatch>;
-        innerLogs.Status = MethodStatus.Failed | MethodStatus.Completed;
+        innerLogs.Status = MethodStatus.Failed | MethodStatus.Aborted;
         innerLogs.ExceptionValue = TryExtractExceptionMessage(args);
         var message = $"Error :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(InterceptionMode)} \n";
         SendToLogDestination(innerLogs, message);
@@ -130,16 +151,21 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
             return;
         }
 
-        innerLogs.FinishTime = DateTime.Now.ToLongTimeString();
-        innerLogs.ExecutionTime = innerLogs.EmbeddedResource.ElapsedTicks;
+        innerLogs.FinishTime = DateTime.Now;
+        innerLogs.ExecutionTime = TimeUnit switch
+        {
+            TimeUnit.Seconds => innerLogs.EmbeddedResource.Elapsed.Seconds,
+            TimeUnit.Milliseconds => innerLogs.EmbeddedResource.Elapsed.Milliseconds,
+            TimeUnit.Ticks => innerLogs.EmbeddedResource.Elapsed.Ticks,
+        };
         innerLogs.Status = MethodStatus.Completed | (args.Exception is null ? MethodStatus.Succeeded : MethodStatus.Failed);
         innerLogs.ExceptionValue = TryExtractExceptionMessage(args);
-        var message = $"Logs :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(InterceptionMode)} \n";
+        var message = $"Logs :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(InterceptionMode, TimeUnit)} \n";
         SendToLogDestination(innerLogs, message);
     }
-    private static string TryExtractExceptionMessage(ExecutionArgs args)
+    private string TryExtractExceptionMessage(ExecutionArgs args)
     {
-        return args.Exception is not null ? $"{args.Exception?.GetType().Name} ({args.Exception?.HelpLink}) : from {args.Exception?.TargetSite} with {args.Exception?.Message} at {args.Exception?.Source}" : String.Empty;
+        return args.Exception is not null ? $"{args.Exception?.GetType().Name} ({args.Exception?.HelpLink}) : from '{(IsAsyncMode ? CallSourceType.Function : args.Exception?.TargetSite)}' with message '{args.Exception?.Message}' at '{args.Exception?.Source}'" : String.Empty;
     }
     private void SendToLogDestination(MetricsMetadata<Stopwatch> innerLogs, string message)
     {
