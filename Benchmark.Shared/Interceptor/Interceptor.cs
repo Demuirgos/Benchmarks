@@ -15,11 +15,12 @@ namespace Benchmarks.Extensions;
 [PSerializable]
 public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
 {
+    private bool isAsyncMode = false;
+
     public virtual void OnEmition(MethodBase args) {}
     public virtual void OnCompletion(ExecutionArgs args) {}
     public virtual void OnSuccess(ExecutionArgs args) {}
     public virtual void OnFailure(ExecutionArgs args) {}
-    private bool isAsyncMode = false;
 
     public override void CompileTimeInitialize(MethodBase method, AspectInfo aspectInfo)
     {
@@ -47,7 +48,7 @@ public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
             OnCompletion(new ExecutionArgs(args));
         } else {
             Console.WriteLine();
-            var task = (Task)args.ReturnValue;
+            var task = (dynamic)args.ReturnValue;
             args.ReturnValue = GetContinuation(args, task);
         }
     }

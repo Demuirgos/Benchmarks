@@ -10,6 +10,7 @@ using Benchmarks.Extensions;
 using Benchmarks.Models;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Benchmarks.Interception;
 
@@ -25,6 +26,29 @@ public record MetricsMetadata<TResource> {
     public long ExecutionTime { get; set; }
     public string StartTime  { get; set; }
     public string FinishTime { get; set; }
+    public string ExceptionValue { get; set; }
+
+    public string ToString(InterceptionMode mode)
+    {
+        var sb = new StringBuilder();
+        sb.Append($"MethodQualifiedName = {MethodQualifiedName}, ");
+
+        sb = mode switch
+        {
+            InterceptionMode.CallCount      => sb.Append($"CallCount = {CallCount}, "),
+            InterceptionMode.ExecutionTime  => sb.Append($"ExecutionTime = {ExecutionTime}, "),
+            InterceptionMode.MetadataLog    => sb.Append($"CallCount = {CallCount}, ")
+                                                 .Append($"ExecutionTime = {ExecutionTime}, ")
+                                                 .Append($"PeriodTime = from {StartTime} to {FinishTime}, "),
+
+        };
+        sb.Append($"Status = {Status & MethodStatus.Completed} | {Status & ~MethodStatus.Completed}, ");
+        if(Status.HasFlag(MethodStatus.Failed) && !String.IsNullOrEmpty(ExceptionValue))
+        {
+            sb.Append($"ExceptionValue = {ExceptionValue}");
+        }
+        return sb.ToString();
+    }
 }
 
 [PSerializable]
@@ -87,7 +111,17 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
         AttachedLog.EmbeddedResource.Start();
     }
 
-    public override void OnCompletion(ExecutionArgs args) {
+    public override void OnFailure(ExecutionArgs args)
+    {
+        var innerLogs = args.MethodExecutionTag as MetricsMetadata<Stopwatch>;
+        innerLogs.Status = MethodStatus.Failed | MethodStatus.Completed;
+        innerLogs.ExceptionValue = TryExtractExceptionMessage(args);
+        var message = $"Error :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(InterceptionMode)} \n";
+        SendToLogDestination(innerLogs, message);
+    }
+
+    public override void OnCompletion(ExecutionArgs args)
+    {
         var innerLogs = args.MethodExecutionTag as MetricsMetadata<Stopwatch>;
         innerLogs.EmbeddedResource.Stop();
 
@@ -98,9 +132,19 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
 
         innerLogs.FinishTime = DateTime.Now.ToLongTimeString();
         innerLogs.ExecutionTime = innerLogs.EmbeddedResource.ElapsedTicks;
-        innerLogs.Status = MethodStatus.Completed;
-        var message = $"{DateTime.Now} :>> Logs : \n {innerLogs} \n";
-        switch (LogDestination) {
+        innerLogs.Status = MethodStatus.Completed | (args.Exception is null ? MethodStatus.Succeeded : MethodStatus.Failed);
+        innerLogs.ExceptionValue = TryExtractExceptionMessage(args);
+        var message = $"Logs :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(InterceptionMode)} \n";
+        SendToLogDestination(innerLogs, message);
+    }
+    private static string TryExtractExceptionMessage(ExecutionArgs args)
+    {
+        return args.Exception is not null ? $"{args.Exception?.GetType().Name} ({args.Exception?.HelpLink}) : from {args.Exception?.TargetSite} with {args.Exception?.Message} at {args.Exception?.Source}" : String.Empty;
+    }
+    private void SendToLogDestination(MetricsMetadata<Stopwatch> innerLogs, string message)
+    {
+        switch (LogDestination)
+        {
             case LogDestination.Console:
                 Console.WriteLine(message);
                 break;

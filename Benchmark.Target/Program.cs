@@ -6,8 +6,10 @@ using System.Reflection;
 using Plugin;
 using static TestFunc;
 
-SumSync(0, 100);
-await SumAsync(0, 100);
+int i = SumSync(0, 100);
+int j =  await SumAsync(0, 100);
+
+Console.WriteLine($"results : {i} == {j}");
 
 var prometheusSinkType = typeof(Plugin.Metrics);
 foreach (var property in prometheusSinkType?.GetProperties(BindingFlags.Public | BindingFlags.Static))
@@ -19,30 +21,43 @@ class TestFunc {
     [Monitor(InterceptionMode.ExecutionTime, LogDestination.Prometheus)]
     public static int SumSync(int n, int k)
     {
-        int res = 0;
-        for(int i = n; i < k; i++){
-            res += GetIntSync(i);
+        try
+        {
+            int res = 0;
+            for(int i = n; i <= k; i++){
+                res += GetIntSync(i);
+            }
+            return res;
+        } catch
+        {
+            return 0;
         }
-        return res;
     }
 
     [Monitor(InterceptionMode.ExecutionTime, LogDestination.Prometheus)]
     public static async Task<int> SumAsync(int n, int k) {
-        int res = 0;
-        for(int i = n; i < k; i++){
-            res += await GetIntAsync(i);
+        try
+        {
+            int res = 0;
+            for (int i = n; i <= k; i++)
+            {
+                res += await GetIntAsync(i);
+            }
+            return res;
         }
-        return res;
+        catch { 
+            return 0;
+        }
     }
 
-    [Monitor(InterceptionMode.ExecutionTime, LogDestination.Console, 30000)]
+    [Monitor(InterceptionMode.ExecutionTime, LogDestination.Console)]
     private static int GetIntSync(int i)
     {
-        return i;
+        return (new Random()).Next(0, 50) == 1 ? throw new Exception("testing sync exceptions") : i;
     }
 
     private static async Task<int> GetIntAsync(int i) {
         await Task.Delay(10);
-        return i;
+        return (new Random()).Next(0, 50) == 1 ? throw new Exception("testing async exceptions") : i;
     }
 }
