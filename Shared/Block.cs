@@ -1,5 +1,38 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
+
+public record Report
+{
+    public record StageData
+    {
+        public SyncMode SyncMode { get; set; }
+        public Stage Stage { get; set; }
+        public long Date { get; set; }
+        public int Index { get; set; }
+        public uint Verfication { get; set; }
+        public static int MarshalledSize => sizeof(SyncMode) + sizeof(Stage) + sizeof(long) + sizeof(int) + sizeof(uint);
+    }
+    public List<StageData> StageDataList { get; set; } = new();
+    public int MarshalledSize => StageData.MarshalledSize * StageDataList.Count;
+}
+
+public enum Stage : byte
+{
+    Prefetch,
+    Disconnected,
+    Waiting,
+    Verifying,
+    Connected,
+    Presync,
+    Sync,
+    Postsync,
+    Saving,
+}
+public enum SyncMode : byte
+{
+    OldBlock, Producing
+}
+
 public record Block
 {
     public uint Number { get; set; }

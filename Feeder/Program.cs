@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 public class Feeder {
     public static uint BlockSyncIndex = 0;
     public static uint BlockSyncDepth = 0;
-   
+    
     public static IEnumerable<Block> Generate(uint start = 0, uint depth = 0) {
         var prevBlock = Engine.GetBlock(start, null, 0);
         while(depth == 0 || (depth-- > 0))
@@ -26,7 +26,7 @@ public class Feeder {
     public static async Task Relay(Stream writer) {
         foreach (var block in Generate(BlockSyncIndex, BlockSyncDepth))
         {
-            Console.WriteLine($"\tBroadcasting : {block.Number} {block.Hash.Select(b => (char)b).Aggregate(String.Empty ,(acc, c) => $"{acc}{c}")}");
+            Console.WriteLine($"Broadcasting : {block.Number} {block.Hash.Select(b => (char)b).Aggregate(String.Empty ,(acc, c) => $"{acc}{c}")}");
             await BroadcastBlock(writer, block);
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
@@ -35,15 +35,9 @@ public class Feeder {
         try
         {
             using NamedPipeServerStream pipeServer = new NamedPipeServerStream("CHAIN_PIPE", PipeDirection.InOut, 1);
-            Console.WriteLine("Connecting ...");
             pipeServer.WaitForConnection();
-            Console.WriteLine("Connected .");
-            Console.WriteLine("Hooking ...");
             BlockSyncIndex = (uint)pipeServer.ReadByte();
-            Console.WriteLine("Hooked .");
-            Console.WriteLine("Broadcasting ...");
             await Relay(pipeServer);
-            Console.WriteLine("Completed .");
         } catch
         {
         }

@@ -1,51 +1,82 @@
-﻿using System.IO.MemoryMappedFiles;
+﻿using System.IO;
+using System.IO.MemoryMappedFiles;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 
 public class Eater {
-    
-    public enum Stage {
-        Disconnected,
-        Connected,
-        Presync,
-        Sync,
-        Postsync,
-    }
-    enum SyncMode
-    {
-        OldBlock, NewBlock, Producing
-    }
+    public class ServerDisconnectedException : Exception { }
+    public class MessageCorruptedException : Exception { }
 
-    public static Stage Current { get; set; } = Stage.Disconnected;
+    public static MemoryMappedFile mmFile;
+    public static MemoryMappedViewStream mmStream;
+    public static Report metadata = new ();
+    
+    public static Stage current = Stage.Disconnected; 
+    public static Stage Current
+    {
+        get => current;
+        set
+        {
+            if (current == value) return;
+            var Previous = Current;
+            current = value;
+            Log(Previous, Current);
+        }
+    }
 
     private static List<Block> chain = new List<Block>();
-    private static long VerificationBlock = 0;
-    public static bool Verify(long i) {
-        foreach (var block in chain)
+    private static uint VerificationBlock = 0;
+    public static bool Verify(uint i, CancellationToken token) {
+        Current = Stage.Verifying;
+        bool valid = true;
+        foreach (var block in chain.Reverse<Block>())
         {
-            if(block.Number == 0) continue;
-            if(block.Number == VerificationBlock) 
-                return true;
+            if(token.IsCancellationRequested) return false;
+
+            if (block.Number == VerificationBlock)
+                break;
             var prevBlock = chain[(int)block.Number - 1];
             if(prevBlock.Hash != block.ParentHash
                 || prevBlock.Difficulty + 1 != block.Difficulty
                 || block.Hash != Engine.GetBytesOfHash(Engine.GenerateHash((block with { Hash = null }).GetHashCode()))) {
-                return false;
+                valid = false;
             }
         }
         VerificationBlock = i;
         return true;
     }
 
-    public static async Task Sync(NamedPipeClientStream accessor) {
+    public static void Log(Stage previous, Stage current)
+    {
+        var stage = new Report.StageData
+        {
+            Stage = current,
+            SyncMode = current == Stage.Postsync ? SyncMode.Producing : SyncMode.OldBlock,
+            Date = DateTime.UtcNow.Ticks,
+            Index = chain.Count,
+            Verfication = VerificationBlock
+        };
+        metadata.StageDataList.Add(stage);
+        var stageBytes = Engine.SerializeStage(stage);
+        mmStream.Write(stageBytes, 0, Report.StageData.MarshalledSize);
+    }
+    public static async Task Sync(NamedPipeClientStream accessor, CancellationToken token) {
         var random = new System.Random(23);
         int i = 0;
         Current = Stage.Presync;
-        while (accessor.CanRead)
+        accessor.WriteByte((byte)chain.Count);
+        Current = Stage.Waiting;
+        while (accessor.CanRead && Current.IsSyncing())
         {
-            if(!accessor.IsConnected)
+            if(token.IsCancellationRequested)
             {
-                throw new Exception("Connection Ended Ubruptly");
+                return;
+            }
+
+            if (!accessor.IsConnected)
+            {
+                Current = Stage.Disconnected;
+                throw new ServerDisconnectedException();
             }
             Current = Stage.Sync;
             var blockBytes = new byte[Block.MarshalledSize];
@@ -55,85 +86,94 @@ public class Eater {
             {
                 continue;
             }
-            Console.WriteLine($"\tReceiving : {block.Number} {block.Hash.Select(b => (char)b).Aggregate(String.Empty, (acc, c) => $"{acc}{c}")}");
-            await Task.Delay(20);
+            Console.WriteLine($"Receiving : {block.Number} {block.Hash.Select(b => (char)b).Aggregate(String.Empty, (acc, c) => $"{acc}{c}")}");
+            await Task.Delay(100);
             chain.Add(block);
-            if(random.Next(0, 100) > 50)
-                {
-                    Verify(block.Number);
+            if(random.Next(0, 100) > 10 && !Verify(block.Number, token))
+            {
+                throw new MessageCorruptedException();
             } 
         }
         Current = Stage.Postsync;
     }
 
-    public static async Task Run() {
+    public static async Task Run(CancellationToken token) {
+        if (token.IsCancellationRequested)
+            return;
+
         try
         {
             using NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", "CHAIN_PIPE");
-            Console.WriteLine("Connecting ...");
             pipeClient.Connect();
-            Console.WriteLine("Connected .");
-            Console.WriteLine("Hooking ...");
-            pipeClient.WriteByte((byte)chain.Count);
-            Console.WriteLine("Hooked .");
-            Console.WriteLine("Syncing ...");
-            await Sync(pipeClient);
-            Console.WriteLine("Completed .");
+            Current = Stage.Connected;
+            Current = Stage.Sync;
+            await Sync(pipeClient, token);
         } catch(Exception e)
         {
-            Console.WriteLine(e.Message);
+            Console.WriteLine(e);
             Current = Stage.Disconnected;
+            await Run(token);
         }
-        await Run();
     }
 
     private static async Task Save()
     {
-        Console.WriteLine("Saving...");
-        using var file = File.Create("temp", chain.Count * Block.MarshalledSize);
+        Current = Stage.Saving;
+        using var file = File.Create("TEMP", chain.Count * Block.MarshalledSize);
         file.Position = 0;
         foreach(var block in chain)
         {
             var sizeOfBlock = Engine.Serialize(block);
             await file.WriteAsync(sizeOfBlock, 0, sizeOfBlock.Length);
-            Console.WriteLine($"\tStored : {block.Number} {block.Hash.Select(b => (char)b).Aggregate(String.Empty, (acc, c) => $"{acc}{c}")}");
+            Console.WriteLine($"Stored : {block.Number} {block.Hash.Select(b => (char)b).Aggregate(String.Empty, (acc, c) => $"{acc}{c}")}");
+            await Task.Delay(100);
         }
-        Console.WriteLine("Saved .");
     }
     private static async Task Load()
     {
-        Console.WriteLine("Loading...");
+        Current = Stage.Prefetch;
         try
         {
-            using var file = File.OpenRead("temp");
+            using var file = File.OpenRead("TEMP");
             while (file.CanRead && file.Length > file.Position)
             {
                 var blockBytes = new byte[Block.MarshalledSize];
                 await file.ReadAsync(blockBytes);
                 var block = Engine.Deserialize(blockBytes);
                 chain.Add(block);
-                Console.WriteLine($"\tRestored : {block.Number} {block.Hash.Select(b => (char)b).Aggregate(String.Empty, (acc, c) => $"{acc}{c}")}");
-                await Task.Delay(20);
+                Console.WriteLine($"Restored : {block.Number} {block.Hash.Select(b => (char)b).Aggregate(String.Empty, (acc, c) => $"{acc}{c}")}");
+                await Task.Delay(100);
             }
         } catch(FileNotFoundException)
         {
-            Console.WriteLine("Loaded .");
             return;
         } catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            Console.WriteLine(e);
         }
-        Console.WriteLine("Loaded .");
     }
 
+    public static async Task DisposeAll()
+    {
+        await Save();
+        mmFile.Dispose();
+        mmStream.Close();
+        mmStream.Dispose();
+    }
     public static async Task Main(string[] args)
     {
+        mmFile = MemoryMappedFile.CreateOrOpen("TEMPR", 1024 * 1024 * 1024);
+        mmStream = mmFile.CreateViewStream();
+        var tokenSrc = new CancellationTokenSource();
         Console.CancelKeyPress += async (src, args) => {
-            args.Cancel = true; 
-            await Save();
-            args.Cancel = false; 
+            if (Current != Stage.Saving && Current != Stage.Prefetch)
+            {
+                args.Cancel = true;
+                tokenSrc.Cancel();
+            };
         };
         await Load();
-        await Run();
+        await Run(tokenSrc.Token);
+        await DisposeAll();
     }
 }

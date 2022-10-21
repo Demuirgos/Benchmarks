@@ -1,20 +1,33 @@
-namespace Observer;
+using System.IO.MemoryMappedFiles;
 
-public class Worker : BackgroundService
+public class Worker
 {
-    private readonly ILogger<Worker> _logger;
-
-    public Worker(ILogger<Worker> logger)
+    public static MemoryMappedFile mmFile;
+    public static MemoryMappedViewStream mmStream;
+    public static async Task Main(string[] _)
     {
-        _logger = logger;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            await Task.Delay(1000, stoppingToken);
+            mmFile = MemoryMappedFile.OpenExisting("TEMPR");
+            mmStream = mmFile.CreateViewStream();
+            while (mmStream.CanRead)
+            {
+                var stageBytes = new byte[Report.StageData.MarshalledSize];
+                mmStream.Read(stageBytes, 0, stageBytes.Length);
+                var StageData = Engine.DeserializeStage(stageBytes);
+                Console.WriteLine($"Worker running at {DateTimeOffset.Now}: CurrentStage = {StageData.Stage}, SyncMode = {StageData.SyncMode}, CurrentIndex = {StageData.Index}, VerificationPivot = {StageData.Verfication}");
+                await Task.Delay(1000);
+            }
         }
+        catch {
+            return;
+        }
+        finally
+        {
+            mmFile?.Dispose();
+            mmStream?.Close();
+            mmStream?.Dispose();
+        }
+        
     }
 }

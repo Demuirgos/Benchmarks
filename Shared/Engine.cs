@@ -32,6 +32,50 @@ public static class Engine
         block.Hash = GetBytesOfHash(GenerateHash(block.GetHashCode()));
         return block;
     }
+    public static byte[] SerializeStage(Report.StageData data)
+    {
+        byte[] bytes = new byte[18];
+        bytes[0] = (byte)data.SyncMode;
+        bytes[1] = (byte)data.Stage;
+        int i = 2;
+        var dateBytes = BitConverter.GetBytes(data.Date);
+        Array.Copy(dateBytes, 0, bytes, i, dateBytes.Length);
+        i += dateBytes.Length;
+        var indexBytes = BitConverter.GetBytes(data.Index);
+        Array.Copy(indexBytes, 0, bytes, i, indexBytes.Length);
+        i += indexBytes.Length;
+        var verificationBytes = BitConverter.GetBytes(data.Verfication);
+        Array.Copy(verificationBytes, 0, bytes, i, verificationBytes.Length);
+        return bytes;
+    }
+    public static byte[] SerializeReport(Report report)
+    {
+        return report.StageDataList
+            .Select(SerializeStage)
+            .Aggregate(new List<byte>(), (acc, reportBytes) => { acc.AddRange(reportBytes); return acc; })
+            .ToArray();
+    }
+
+    public static Report.StageData DeserializeStage(byte[] data)
+    {
+        return new Report.StageData
+        {
+            SyncMode = (SyncMode)data[0],
+            Stage = (Stage)data[1],
+            Date = BitConverter.ToInt64(data[2..10]),
+            Index = BitConverter.ToInt32(data[10..14]),
+            Verfication = BitConverter.ToUInt32(data[14..18]),
+        };
+    }
+    public static Report DeserializeReport(byte[] data)
+    {
+        return new Report
+        {
+            StageDataList = data.Chunk(18)
+                    .Select(DeserializeStage)
+                    .ToList()
+        };
+    }
 
     public static byte[] Serialize(Block block)
     {
@@ -85,4 +129,6 @@ public static class Engine
             Transactions = transactions
         };
     }
+
+    public static bool IsSyncing(this Stage stage) => stage == Stage.Verifying || stage == Stage.Sync || stage == Stage.Waiting;
 }
