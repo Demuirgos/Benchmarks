@@ -1,0 +1,26 @@
+{
+    "Sync" : {
+        "Mode" : null,
+        "StartTime":0,
+        "Stage" : {
+            "currentStage": ["BeaconHeaders", "OldHeaders"],
+            "progress": [
+                {
+                    "stage": "BeaconHeaders",
+                    "progress": 0
+                },
+                {
+                    "stage": "OldHeaders",
+                    "progress": 0
+                }
+            ]
+        },
+        "EndTime": 0
+    },
+    "Interrupted" : [
+        {
+            "At" : null,
+            "RestoredAt" : null 
+        }
+    ]
+}
