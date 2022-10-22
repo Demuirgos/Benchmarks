@@ -47,7 +47,6 @@ public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
         if (isEndOfStateMachine) {
             OnCompletion(new ExecutionArgs(args));
         } else {
-            Console.WriteLine();
             var task = (dynamic)args.ReturnValue;
             args.ReturnValue = GetContinuation(args, task);
         }
@@ -55,7 +54,6 @@ public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
 
     private async  Task<TResult> GetContinuation<TResult>(MethodExecutionArgs args, Task<TResult> previousStateMachineTask)
     {
-        Console.WriteLine($"GetContinuation<{typeof(TResult).Name}>");
         return await previousStateMachineTask.ContinueWith(
             t => RunTaskInContext(t, args),
             TaskContinuationOptions.ExecuteSynchronously);
@@ -63,14 +61,13 @@ public class OnGeneralMethodBoundaryAspect : OnMethodBoundaryAspect
             
     private async  Task GetContinuation(MethodExecutionArgs args, Task previousStateMachineTask)
     {
-        Console.WriteLine($"GetContinuation<>");
         await previousStateMachineTask.ContinueWith(
             t => RunTaskInContext(t, args),
             TaskContinuationOptions.ExecuteSynchronously);
     }
 
     
-    private TResult? RunTaskInContext<TResult>(Task<TResult> previousStateMachineTask, MethodExecutionArgs args)
+    private TResult RunTaskInContext<TResult>(Task<TResult> previousStateMachineTask, MethodExecutionArgs args)
     {
         var taskArgs = new ExecutionArgs(previousStateMachineTask, args);
 

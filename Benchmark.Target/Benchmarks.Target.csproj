@@ -10,11 +10,11 @@
 
   <ItemGroup>
 	  <ProjectReference Include="..\Benchmark.Shared\Benchmarks.Shared.csproj" />
-	  <ProjectReference Include="..\Benchmark.Generator\Benchmarks.Generator.csproj" 
-                      OutputItemType="Analyzer" />
+	  <ProjectReference Include="..\Benchmark.Generator\Benchmarks.Generator.csproj" OutputItemType="Analyzer" />
   </ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
 		<PackageReference Include="PostSharp" Version="6.10.15" />
 	</ItemGroup>
 

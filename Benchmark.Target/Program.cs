@@ -1,62 +1,74 @@
-﻿using Benchmarks.Interception;
+﻿using BenchmarkDotNet.Attributes;
+using Benchmarks.Interception;
 using Benchmarks.Models;
 using PostSharp.Aspects.Advices;
 using PostSharp.Extensibility;
+using System.Diagnostics;
 using System.Reflection;
-using Plugin;
 using static TestFunc;
+using BenchmarkDotNet.Running;
 
-try
-{
-    int i = SumSync(0, 100);
-    int j =  await SumAsync(0, 100);
-    Console.WriteLine($"results : {i} == {j}");
-}
-catch { }
+BenchmarkRunner.Run<TestFunc>();
 
+[MemoryDiagnoser]
+public class TestFunc {
+    public IEnumerable<int> ValuesForlow => new int[] { 0, 100, 1000};
+    public IEnumerable<int> ValuesForHigh => new int[] { 100, 1000, 1000000};
 
-var prometheusSinkType = typeof(Plugin.Metrics);
-foreach (var property in prometheusSinkType?.GetProperties(BindingFlags.Public | BindingFlags.Static))
-{
-    var value = property.GetValue(null, null);
-    Console.WriteLine($"{property.Name} := {value}");
-}
-class TestFunc {
+    [ParamsSource(nameof(ValuesForlow))]
+    public int lowBound { get; set; }
+    [ParamsSource(nameof(ValuesForHigh))]
+    public int highBound { get; set; }
+    [Benchmark] public int SumSyncAttr() => SumSync1(lowBound, highBound);
+    [Benchmark] public async Task<int> SumAsyncAttr() => await SumAsync1(lowBound, highBound);
+    [Benchmark] public int SumSyncClass() => SumSync2(lowBound, highBound);
+    [Benchmark] public async Task<int> SumAsyncClass() => await SumAsync2(lowBound, highBound);
 
-    [Monitor(InterceptionMode.MetadataLog, LogDestination.Console)]
-    public static int SumSync(int n, int k)
+    [Monitor(InterceptionMode: InterceptionMode.ExecutionTime, LogDestination : LogDestination.Console)]
+    public static int SumSync1(int n, int k)
     {
-        try
-        {
-            int res = 0;
-            for(int i = n; i <= k; i++){
-                res += GetIntSync(i);
-            }
-            return res;
-        } catch
-        {
-            return 0;
-        }
+        return ActionSync(n, k);
     }
 
-    [Monitor(InterceptionMode.MetadataLog, LogDestination.Console)]
-    public static async Task<int> SumAsync(int n, int k) {
+    [Monitor(InterceptionMode: InterceptionMode.ExecutionTime, LogDestination : LogDestination.Console)]
+    public static async Task<int> SumAsync1(int n, int k) {
+        using var timer = new DisposableTimer();
+        return await ActionAsync(n, k);
+    }
+    public static int SumSync2(int n, int k)
+    {
+        using var timer = new DisposableTimer();
+        return ActionSync(n, k);
+    }
+    public static async Task<int> SumAsync2(int n, int k)
+    {
+        using var timer = new DisposableTimer();
+        return await ActionAsync(n, k);
+    }
+
+    public static int ActionSync(int n, int k)
+    {
         int res = 0;
         for (int i = n; i <= k; i++)
         {
-            res += await GetIntAsync(i);
+            res += i;
         }
         return res;
     }
-    [Monitor(InterceptionMode.CallCount, LogDestination.Prometheus)]
-    private static int GetIntSync(int i)
+    public static async Task<int> ActionAsync(int n, int k)
     {
-        return i;
+        int res = 0;
+        for (int i = n; i <= k; i++)
+        {
+            res += await Task.FromResult(i);
+        }
+        return res;
     }
+}
 
-    [Monitor(InterceptionMode.ExecutionTime, LogDestination.Prometheus)]
-    private static async Task<int> GetIntAsync(int i) {
-        await Task.Delay(10);
-        return (new Random()).Next(0, 50) == 1 ? throw new Exception("testing async exceptions") : i;
-    }
+public class DisposableTimer :IDisposable
+{
+    private Stopwatch watch = new();
+    public DisposableTimer() => watch.Start();
+    public void Dispose() => Console.WriteLine(watch.Elapsed.TotalMilliseconds);
 }

@@ -28,8 +28,8 @@ using Microsoft.CodeAnalysis.Text;
 [Generator]
 public class MetricsGenerator : ISourceGenerator
 {
-    public enum LogDestination { Debug, Console, Prometheus, None }
-    public enum InterceptionMode { ExecutionTime, CallCount, MetadataLog }
+    public enum LogDestination { Debug, Console, Prometheus, File, None }
+    public enum InterceptionMode { ExecutionTime, CallCount, MetadataLog, None}
     private struct MetricData
     {
         public MetricData(params string[] args) : this(args[0], args[1], args[2]) { }
@@ -72,13 +72,13 @@ public static partial class Metrics
 
     public void Initialize(GeneratorInitializationContext context)
     {
-        // #if DEBUG
-        //     if (!Debugger.IsAttached)
-        //     {
-        //         Debugger.Launch();
-        //     }
-        // #endif 
-        // Debug.WriteLine("Initalize code generator");
+        #if DEBUG
+            if (!Debugger.IsAttached)
+            {
+                Debugger.Launch();
+            }
+        #endif 
+        Debug.WriteLine("Initalize code generator");
     }
 
     // Note(Ayman) :    looks for this Pattern @ [Metrics(TypeName , PropertyName , Description)]
@@ -107,18 +107,43 @@ public static partial class Metrics
                 .Select(attr => {
                     bool isMonitor = attr.Name.ToString() == "Monitor";
                     var args = attr.ArgumentList.Arguments
-                                    .Select(arg => semanticModel.GetConstantValue(arg.Expression).ToString())
+                                    .Select(arg => 
+                                    { 
+                                        return (arg.NameColon?.Name.ToString(), semanticModel.GetConstantValue(arg.Expression).ToString()); 
+                                    })
                                     .ToArray();
                     if (isMonitor)
                     {
-                        Enum.TryParse<InterceptionMode>(args[0], out var firstArg);
-                        Enum.TryParse<LogDestination>(args[1], out var SecndArg);
-                        var targtArg = funcDef.Identifier.ToString();
-                        if(     firstArg is InterceptionMode.ExecutionTime or InterceptionMode.CallCount
-                            &&  SecndArg is LogDestination.Prometheus)
+                        var logDest = LogDestination.None;
+                        var logMode = InterceptionMode.None;
+                        foreach (var argNode in args)
                         {
-                            var prop = $"{targtArg}{firstArg}";
-                            var desc = $"{targtArg} {firstArg} Metrics";
+                            if (argNode.Item1 is null)
+                            {
+                                throw new FormatException("Arguments of Attribute :Monitor must all be named arguments");
+                            }
+                            var argType = this.GetType().Assembly
+                                                    .GetTypes()
+                                                    .Where(tp => tp.Name == argNode.Item1)
+                                                    .FirstOrDefault();
+                            if (argType == null) continue;
+
+                            var argValue = Enum.Parse(argType, argNode.Item2);
+                            if (argType == typeof(LogDestination))
+                            {
+                                logDest = (LogDestination)argValue;
+                            } else if (argType == typeof(InterceptionMode))
+                            {
+                                logMode = (InterceptionMode)argValue;
+                            }
+
+                        }
+                        var targtArg = funcDef.Identifier.ToString();
+                        if(     logMode is InterceptionMode.ExecutionTime or InterceptionMode.CallCount
+                            &&  logDest is LogDestination.Prometheus)
+                        {
+                            var prop = $"{targtArg}{logMode}";
+                            var desc = $"{targtArg} {logMode} Metrics";
                             return new string[] { $"long", prop, desc };
 
                         }

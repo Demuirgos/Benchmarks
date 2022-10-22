@@ -75,12 +75,14 @@ public record MetricsMetadata<TResource> {
 [DebuggerStepThrough]
 [AttributeUsage(AttributeTargets.Method)]
 public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
-    [PNonSerialized]
-    private (Assembly Assembly, string Function) CallSourceType;
-    private InterceptionMode InterceptionMode { get; set; } 
-    private LogDestination LogDestination { get; set; }
-    private TimeUnit TimeUnit { get; set; }
-    private int PeriodBetweenLogsWait { get; set; }
+
+    [PNonSerialized] private (Assembly Assembly, string Function) CallSourceType;
+    
+    private InterceptionMode _interceptionMode { get; set; } 
+    private LogDestination _logDestination { get; set; }
+    private TimeUnit _timeUnit { get; set; }
+    private int _periodBetweenLogsWait { get; set; }
+    private string _logFilePath { get; set; }
 
     private DateTime? previousLogTime;
     private bool ShouldLog(int periodTicks)
@@ -102,11 +104,17 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
     }
 
     private bool IsInitialized = false;
-    private string PropertyName => $"{CallSourceType.Function}{InterceptionMode}";
-    public MonitorAttribute(InterceptionMode interceptionMode, LogDestination logDestination, TimeUnit timeUnit = TimeUnit.Milliseconds ,int WaitInBetweenLogs = 100) 
+    private string PropertyName => $"{CallSourceType.Function}{_interceptionMode}";
+    public MonitorAttribute(InterceptionMode InterceptionMode, LogDestination LogDestination, String FilePath = null, TimeUnit TimeUnit = TimeUnit.Milliseconds ,int WaitInBetweenLogs = 100) 
     {
-        InterceptionMode = interceptionMode; LogDestination = logDestination; PeriodBetweenLogsWait = WaitInBetweenLogs; TimeUnit = timeUnit;
-
+        _interceptionMode = InterceptionMode; 
+        _logDestination = LogDestination; 
+        _periodBetweenLogsWait = WaitInBetweenLogs; 
+        _timeUnit = TimeUnit;
+        if(LogDestination == LogDestination.File)
+        {
+            _logFilePath = FilePath;
+        }
     }
     public override void OnEntry(MethodExecutionArgs args) {
         if(!IsInitialized)
@@ -117,6 +125,9 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
             {
                 MetricsMetadata.CallCountKeeper[CallSourceType.Function] = 0;
             }
+
+
+
             IsInitialized = true;
         }
 
@@ -137,7 +148,7 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
         var innerLogs = args.MethodExecutionTag as MetricsMetadata<Stopwatch>;
         innerLogs.Status = MethodStatus.Failed | MethodStatus.Aborted;
         innerLogs.ExceptionValue = TryExtractExceptionMessage(args);
-        var message = $"Error :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(InterceptionMode)} \n";
+        var message = $"Error :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(_interceptionMode)} \n";
         SendToLogDestination(innerLogs, message);
     }
 
@@ -146,13 +157,13 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
         var innerLogs = args.MethodExecutionTag as MetricsMetadata<Stopwatch>;
         innerLogs.EmbeddedResource.Stop();
 
-        if (!ShouldLog(PeriodBetweenLogsWait))
+        if (!ShouldLog(_periodBetweenLogsWait))
         {
             return;
         }
 
         innerLogs.FinishTime = DateTime.Now;
-        innerLogs.ExecutionTime = TimeUnit switch
+        innerLogs.ExecutionTime = _timeUnit switch
         {
             TimeUnit.Seconds => innerLogs.EmbeddedResource.Elapsed.Seconds,
             TimeUnit.Milliseconds => innerLogs.EmbeddedResource.Elapsed.Milliseconds,
@@ -160,7 +171,7 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
         };
         innerLogs.Status = MethodStatus.Completed | (args.Exception is null ? MethodStatus.Succeeded : MethodStatus.Failed);
         innerLogs.ExceptionValue = TryExtractExceptionMessage(args);
-        var message = $"Logs :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(InterceptionMode, TimeUnit)} \n";
+        var message = $"Logs :: {DateTime.Now} :>> Logs : \n {innerLogs.ToString(_interceptionMode, _timeUnit)} \n";
         SendToLogDestination(innerLogs, message);
     }
     private string TryExtractExceptionMessage(ExecutionArgs args)
@@ -169,7 +180,8 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
     }
     private void SendToLogDestination(MetricsMetadata<Stopwatch> innerLogs, string message)
     {
-        switch (LogDestination)
+
+        switch (_logDestination)
         {
             case LogDestination.Console:
                 Console.WriteLine(message);
@@ -181,7 +193,7 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
                 var prometheusSinkType = CallSourceType.Assembly.GetTypes().Where(t => t.FullName == "Plugin.Metrics").Single();
                 prometheusSinkType?
                     .GetProperty(PropertyName, BindingFlags.Public | BindingFlags.Static)
-                    .SetValue(null, InterceptionMode switch
+                    .SetValue(null, _interceptionMode switch
                     {
                         InterceptionMode.ExecutionTime => innerLogs.ExecutionTime,
                         InterceptionMode.CallCount => innerLogs.CallCount,
