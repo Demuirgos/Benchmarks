@@ -8,7 +8,11 @@ using System.Reflection;
 using static TestFunc;
 using BenchmarkDotNet.Running;
 
-BenchmarkRunner.Run<TestFunc>();
+var i = SumSync1(0, 100);
+var j = await SumAsync1(0, 100);
+Console.WriteLine($"Results are : [{i}, {j}]");
+
+//BenchmarkRunner.Run<TestFunc>();
 
 [MemoryDiagnoser]
 public class TestFunc {
@@ -21,8 +25,6 @@ public class TestFunc {
     public int highBound { get; set; }
     [Benchmark] public int SumSyncAttr() => SumSync1(lowBound, highBound);
     [Benchmark] public async Task<int> SumAsyncAttr() => await SumAsync1(lowBound, highBound);
-    [Benchmark] public int SumSyncClass() => SumSync2(lowBound, highBound);
-    [Benchmark] public async Task<int> SumAsyncClass() => await SumAsync2(lowBound, highBound);
 
     [Monitor(InterceptionMode: InterceptionMode.ExecutionTime, LogDestination : LogDestination.Console)]
     public static int SumSync1(int n, int k)
@@ -30,19 +32,9 @@ public class TestFunc {
         return ActionSync(n, k);
     }
 
-    [Monitor(InterceptionMode: InterceptionMode.ExecutionTime, LogDestination : LogDestination.Console)]
-    public static async Task<int> SumAsync1(int n, int k) {
-        using var timer = new DisposableTimer();
-        return await ActionAsync(n, k);
-    }
-    public static int SumSync2(int n, int k)
+    [Monitor(InterceptionMode: InterceptionMode.Failures, LogDestination : LogDestination.Console)]
+    public static async Task<int> SumAsync1(int n, int k)
     {
-        using var timer = new DisposableTimer();
-        return ActionSync(n, k);
-    }
-    public static async Task<int> SumAsync2(int n, int k)
-    {
-        using var timer = new DisposableTimer();
         return await ActionAsync(n, k);
     }
 
@@ -60,15 +52,12 @@ public class TestFunc {
         int res = 0;
         for (int i = n; i <= k; i++)
         {
+            if((new Random()).Next(0, 100) == 0)
+            {
+                throw new Exception("Random Exception");
+            }
             res += await Task.FromResult(i);
         }
         return res;
     }
-}
-
-public class DisposableTimer :IDisposable
-{
-    private Stopwatch watch = new();
-    public DisposableTimer() => watch.Start();
-    public void Dispose() => Console.WriteLine(watch.Elapsed.TotalMilliseconds);
 }

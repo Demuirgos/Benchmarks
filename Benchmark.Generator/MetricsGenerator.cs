@@ -72,13 +72,6 @@ public static partial class Metrics
 
     public void Initialize(GeneratorInitializationContext context)
     {
-        #if DEBUG
-            if (!Debugger.IsAttached)
-            {
-                Debugger.Launch();
-            }
-        #endif 
-        Debug.WriteLine("Initalize code generator");
     }
 
     // Note(Ayman) :    looks for this Pattern @ [Metrics(TypeName , PropertyName , Description)]
@@ -96,7 +89,6 @@ public static partial class Metrics
     {
         return allFunctions.SelectMany(funcDef =>
         {
-            bool isMonitorFlag = false; 
             var semanticModel = context.GetSemanticModel(funcDef.SyntaxTree);
             return funcDef.AttributeLists
                 .SelectMany(x => x.Attributes)
