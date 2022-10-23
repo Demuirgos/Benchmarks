@@ -3,6 +3,7 @@ using BenchmarkDotNet.Attributes;
 using Benchmarks.Interception;
 using Benchmarks.Models;
 using BenchmarkDotNet.Running;
+using static TestFunc;
 
 BenchmarkRunner.Run<TestFunc>();
 

@@ -24,6 +24,7 @@ public class OnGeneralMethodBoundaryAspect : MethodInterceptionAspect
         {
             executionArgs.Proceed();
             args.Status = MethodStatus.Succeeded;
+            args.Return = executionArgs.ReturnValue;
             OnSuccess(args);
             return;
         }

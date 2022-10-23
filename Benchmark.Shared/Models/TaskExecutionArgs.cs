@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using PostSharp.Aspects;
 
 namespace Benchmarks.Models;
@@ -16,6 +17,7 @@ public static class MetricsMetadataExtensions {
 }
 public class MetricsMetadata {
     public Object EmbeddedResource { get; set; }
+    public object[] arguments { get; set; }
     public string MethodQualifiedName { get; set; }
     public long CallCount => MetricsMetadataExtensions.CallCountKeeper[MethodQualifiedName];
     public long Failures => MetricsMetadataExtensions.ExceptionCountKeeper[MethodQualifiedName];
@@ -24,15 +26,25 @@ public class MetricsMetadata {
     public DateTime StartTime  { get; set; }
     public DateTime FinishTime { get; set; }
     public Exception Exception { get; set; }
+    public object Return { get; set; }
 
     public static implicit operator MetricsMetadata(MethodInterceptionArgs args) => new() {
         MethodQualifiedName = args.Method.Name,
+        arguments = args.Arguments.ToArray(),
+        Return = args.ReturnValue
     };
 
     public string ToString(InterceptionMode mode, TimeUnit unit = TimeUnit.Temporal)
     {
-        var sb = new StringBuilder();
+        StringBuilder sb = new();
         sb.Append($"MethodName = {MethodQualifiedName}, ");
+
+        if(mode is InterceptionMode.MetadataLog) {
+            string argsStr = JsonSerializer.Serialize(arguments);
+            sb.Append($"Arguments = {argsStr}, ");
+            string retrStr = JsonSerializer.Serialize(Return);
+            sb.Append($"ReturnValue = {retrStr}, ");
+        }
 
         if (Status.HasFlag(MethodStatus.Completed))
         {
@@ -47,7 +59,9 @@ public class MetricsMetadata {
                 InterceptionMode.CallCount      => sb.Append($"CallCount = {CallCount}, "),
                 InterceptionMode.Failures       => sb.Append($"Failures = {Failures}, "),
                 InterceptionMode.ExecutionTime  => sb.Append($"ExecutionTime = {executionTime}, "),
-                InterceptionMode.MetadataLog    => sb.Append($"CallCount = {CallCount}, ExecutionTime = {executionTime}, ")
+                InterceptionMode.MetadataLog    => sb.Append($"CallCount = {CallCount}, ")
+                                                     .Append($"Failures = {Failures}, ")
+                                                     .Append($"ExecutionTime = {executionTime}, ")
                                                      .Append($"PeriodTime = from {StartTime.ToString("hh:mm:ss.fff tt")} to {FinishTime.ToString("hh:mm:ss.fff tt")}, "),
             };
 

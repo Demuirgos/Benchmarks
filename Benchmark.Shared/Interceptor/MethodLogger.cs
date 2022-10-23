@@ -70,11 +70,10 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
             IsInitialized = true;
         }
 
-        var AttachedLog = new MetricsMetadata {
-            EmbeddedResource = new Stopwatch(),
-            MethodQualifiedName = args.Method.Name,
-            StartTime = DateTime.Now,
-        };
+        MetricsMetadata AttachedLog = args;
+        AttachedLog.EmbeddedResource = new Stopwatch();
+        AttachedLog.MethodQualifiedName = args.Method.Name;
+        AttachedLog.StartTime = DateTime.Now;
 
         MetricsMetadataExtensions.CallCountKeeper[CallSourceType.Function]++;
         
