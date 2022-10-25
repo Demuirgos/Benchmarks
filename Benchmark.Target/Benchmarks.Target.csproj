@@ -10,7 +10,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
+		<ProjectReference Include="..\Benchmark.Referenced\Benchmarks.Referenced.csproj"/>
 	</ItemGroup>
 
-    <Import Project="$(MSBuildProjectExtensionsPath)$(MSBuildProjectFile).*.targets"/>  
+    <Import Project="$(MSBuildProjectExtensionsPath)$(MSBuildProjectFile).*.props"/>  
 </Project>

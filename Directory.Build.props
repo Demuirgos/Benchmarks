@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project>
 	<ItemGroup Label="MonitorPackagePart1" Condition="$(MicroMonitored)">
 		<PackageReference Include="PostSharp" Version="6.10.15" />
 	</ItemGroup>
@@ -8,7 +8,4 @@
 		<Using Include="Benchmarks.Interception" />
 		<Using Include="Benchmarks.Models" />
 	</ItemGroup>
-	<Target Name="WhitespaceFix" AfterTargets="Build">
-		<Exec WorkingDirectory="$(WorkgroupDir)" Command="dotnet format whitespace" />
-	</Target>
 </Project>

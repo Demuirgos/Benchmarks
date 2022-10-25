@@ -12,7 +12,10 @@ namespace Benchmarks.Interception;
 [PSerializable]
 [DebuggerStepThrough]
 [AttributeUsage(AttributeTargets.Method)]
-public class MonitorAttribute : OnGeneralMethodBoundaryAspect
+public class MonitorAttribute :
+
+
+ OnGeneralMethodBoundaryAspect
 {
 
     [PNonSerialized] private (Assembly Assembly, string Function) CallSourceType;

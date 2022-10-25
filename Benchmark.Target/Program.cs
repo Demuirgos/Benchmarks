@@ -1,10 +1,13 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-BenchmarkRunner.Run<TestFunc>();
+using Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsTCPIP;
+
+BenchmarkRunner.Run<Tests>();
 
 [MemoryDiagnoser]
-public class TestFunc
+public class Tests
 {
     public IEnumerable<int> ValuesForlow => new int[] { 0, 100, 1000 };
     public IEnumerable<int> ValuesForHigh => new int[] { 100, 1000, 1000000 };
