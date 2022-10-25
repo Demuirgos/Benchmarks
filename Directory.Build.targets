@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup Label="MonitorPackagePart1" Condition="$(MicroMonitored)">
+		<PackageReference Include="PostSharp" Version="6.10.15" />
+	</ItemGroup>
+	<ItemGroup Label="MonitorPackagePart2" Condition="'$(ProjectName)'!='Benchmarks.Generator' AND '$(ProjectName)'!='Benchmarks.Shared'">
+		<ProjectReference Include="..\Benchmark.Generator\Benchmarks.Generator.csproj" OutputItemType="Analyzer"/>
+		<ProjectReference Include="..\Benchmark.Shared\Benchmarks.Shared.csproj"/>
+		<Using Include="Benchmarks.Interception" />
+		<Using Include="Benchmarks.Models" />
+	</ItemGroup>
+	<Target Name="WhitespaceFix" AfterTargets="Build">
+		<Exec WorkingDirectory="$(WorkgroupDir)" Command="dotnet format whitespace" />
+	</Target>
+</Project>

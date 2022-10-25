@@ -1,21 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <LangVersion>latest</LangVersion>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <ItemGroup>
-	  <ProjectReference Include="..\Benchmark.Shared\Benchmarks.Shared.csproj" />
-	  <ProjectReference Include="..\Benchmark.Generator\Benchmarks.Generator.csproj" OutputItemType="Analyzer" />
-  </ItemGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <LangVersion>latest</LangVersion>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <MicroMonitored>$(DefineConstants.Contains("MONITOR"))</MicroMonitored>
+    </PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
-		<PackageReference Include="PostSharp" Version="6.10.15" />
 	</ItemGroup>
 
+    <Import Project="$(MSBuildProjectExtensionsPath)$(MSBuildProjectFile).*.targets"/>  
 </Project>

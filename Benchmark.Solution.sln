@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Generator", "..\Benchmark.Generator\Benchmarks.Generator.csproj", "{2BCF721E-9F4C-48CB-8B39-6725FC2B24EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Generator", ".\Benchmark.Generator\Benchmarks.Generator.csproj", "{2BCF721E-9F4C-48CB-8B39-6725FC2B24EF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Shared", "..\Benchmark.Shared\Benchmarks.Shared.csproj", "{7ACF929C-A3DC-48A0-AEA4-6FED9A4AD885}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Shared", ".\Benchmark.Shared\Benchmarks.Shared.csproj", "{7ACF929C-A3DC-48A0-AEA4-6FED9A4AD885}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Target", "..\Benchmark.Target\Benchmarks.Target.csproj", "{532589AF-36ED-4077-B040-B9CDCBA9866E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Target", ".\Benchmark.Target\Benchmarks.Target.csproj", "{532589AF-36ED-4077-B040-B9CDCBA9866E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

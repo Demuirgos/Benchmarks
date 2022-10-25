@@ -12,11 +12,12 @@ namespace Benchmarks.Interception;
 [PSerializable]
 [DebuggerStepThrough]
 [AttributeUsage(AttributeTargets.Method)]
-public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
+public class MonitorAttribute : OnGeneralMethodBoundaryAspect
+{
 
     [PNonSerialized] private (Assembly Assembly, string Function) CallSourceType;
-    
-    private InterceptionMode _interceptionMode { get; set; } 
+
+    private InterceptionMode _interceptionMode { get; set; }
     private LogDestination _logDestination { get; set; }
     private TimeUnit _timeUnit { get; set; }
     private int _periodBetweenLogsWait { get; set; }
@@ -43,21 +44,22 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
     private bool IsInitialized = false;
     private string PropertyName => $"{CallSourceType.Function}{_interceptionMode}";
     public MonitorAttribute(
-        InterceptionMode InterceptionMode, 
-        LogDestination LogDestination, String FilePath = null, 
-        TimeUnit TimeUnit = TimeUnit.Temporal, int WaitInBetweenLogs = 100) 
+        InterceptionMode InterceptionMode,
+        LogDestination LogDestination, String FilePath = null,
+        TimeUnit TimeUnit = TimeUnit.Temporal, int WaitInBetweenLogs = 100)
     {
-        _interceptionMode = InterceptionMode; 
-        _logDestination = LogDestination; 
-        _periodBetweenLogsWait = WaitInBetweenLogs; 
+        _interceptionMode = InterceptionMode;
+        _logDestination = LogDestination;
+        _periodBetweenLogsWait = WaitInBetweenLogs;
         _timeUnit = TimeUnit;
-        if(LogDestination == LogDestination.File)
+        if (LogDestination == LogDestination.File)
         {
             _logFilePath = FilePath;
         }
     }
-    public override MetricsMetadata OnStarting(MethodInterceptionArgs args) {
-        if(!IsInitialized)
+    public override MetricsMetadata OnStarting(MethodInterceptionArgs args)
+    {
+        if (!IsInitialized)
         {
             var method = args.Method;
             CallSourceType = (method.Module.Assembly, method.Name);
@@ -76,7 +78,7 @@ public class MonitorAttribute : OnGeneralMethodBoundaryAspect {
         AttachedLog.StartTime = DateTime.Now;
 
         MetricsMetadataExtensions.CallCountKeeper[CallSourceType.Function]++;
-        
+
         (AttachedLog.EmbeddedResource as Stopwatch).Start();
         return AttachedLog;
     }

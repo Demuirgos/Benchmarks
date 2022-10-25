@@ -9,11 +9,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 
+namespace Benchmarks.Generator;
+
 [Generator]
 public class MetricsGenerator : ISourceGenerator
 {
     public enum LogDestination { Debug, Console, Prometheus, File, None }
-    public enum InterceptionMode { ExecutionTime, CallCount, MetadataLog, None}
+    public enum InterceptionMode { ExecutionTime, CallCount, MetadataLog, None }
     private struct MetricData
     {
         public MetricData(params string[] args) : this(args[0], args[1], args[2]) { }
@@ -28,7 +30,7 @@ public class MetricsGenerator : ISourceGenerator
         public string PropertyName { get; }
     }
     private string EmitProps(MetricData[] metrics)
-    => metrics  .Select(metric => @$"[Description(""{metric.Description}"")] public static {metric.Typename} {metric.PropertyName} {{ get; set; }}")
+    => metrics.Select(metric => @$"[Description(""{metric.Description}"")] public static {metric.Typename} {metric.PropertyName} {{ get; set; }}")
                 .Aggregate((a, b) => $"{a}\n\t{b}");
     private string PartialMetrics(MetricData[] metrics) => @$"
 using System;
@@ -76,16 +78,18 @@ public static partial class Metrics
             var semanticModel = context.GetSemanticModel(funcDef.SyntaxTree);
             return funcDef.AttributeLists
                 .SelectMany(x => x.Attributes)
-                .Where(attr => {
+                .Where(attr =>
+                {
                     var attrName = attr.Name.ToString();
                     return attrName == "Metrics" || attrName == "Monitor";
                 })
-                .Select(attr => {
+                .Select(attr =>
+                {
                     bool isMonitor = attr.Name.ToString() == "Monitor";
                     var args = attr.ArgumentList.Arguments
-                                    .Select(arg => 
-                                    { 
-                                        return (arg.NameColon?.Name.ToString(), semanticModel.GetConstantValue(arg.Expression).ToString()); 
+                                    .Select(arg =>
+                                    {
+                                        return (arg.NameColon?.Name.ToString(), semanticModel.GetConstantValue(arg.Expression).ToString());
                                     })
                                     .ToArray();
                     if (isMonitor)
@@ -108,22 +112,24 @@ public static partial class Metrics
                             if (argType == typeof(LogDestination))
                             {
                                 logDest = (LogDestination)argValue;
-                            } else if (argType == typeof(InterceptionMode))
+                            }
+                            else if (argType == typeof(InterceptionMode))
                             {
                                 logMode = (InterceptionMode)argValue;
                             }
 
                         }
                         var targtArg = funcDef.Identifier.ToString();
-                        if(     logMode is InterceptionMode.ExecutionTime or InterceptionMode.CallCount
-                            &&  logDest is LogDestination.Prometheus)
+                        if (logMode is InterceptionMode.ExecutionTime or InterceptionMode.CallCount
+                            && logDest is LogDestination.Prometheus)
                         {
                             var prop = $"{targtArg}{logMode}";
                             var desc = $"{targtArg} {logMode} Metrics";
                             return new string[] { $"long", prop, desc };
 
                         }
-                    } return Array.Empty<string>();
+                    }
+                    return Array.Empty<string>();
                 })
                 .Where(x => x.Length > 0)
                 .ToArray();

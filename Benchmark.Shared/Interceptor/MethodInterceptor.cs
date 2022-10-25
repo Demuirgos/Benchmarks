@@ -7,18 +7,17 @@ using Benchmarks.Models;
 
 namespace Benchmarks.Extensions;
 
-
 [PSerializable]
 public class OnGeneralMethodBoundaryAspect : MethodInterceptionAspect
 {
     public virtual MetricsMetadata OnStarting(MethodInterceptionArgs args) => args;
-    public virtual void OnCompletion(MetricsMetadata args) {}
-    public virtual void OnSuccess(MetricsMetadata args) {}
-    public virtual void OnFailure(MetricsMetadata args) {}
+    public virtual void OnCompletion(MetricsMetadata args) { }
+    public virtual void OnSuccess(MetricsMetadata args) { }
+    public virtual void OnFailure(MetricsMetadata args) { }
 
     public override void OnInvoke(MethodInterceptionArgs executionArgs)
     {
-        #if MONITOR
+#if MONITOR
         MetricsMetadata args = OnStarting(executionArgs);
         args.Status = MethodStatus.OnGoing;
         try
@@ -40,14 +39,14 @@ public class OnGeneralMethodBoundaryAspect : MethodInterceptionAspect
             args.Status |= MethodStatus.Completed;
             OnCompletion(args);
         }
-        #else
+#else
         executionArgs.Proceed();
-        #endif
+#endif
     }
 
     public override async Task OnInvokeAsync(MethodInterceptionArgs executionArgs)
     {
-        #if MONITOR
+#if MONITOR
         MetricsMetadata args = OnStarting(executionArgs);
         args.Status = MethodStatus.OnGoing;
         try
@@ -68,8 +67,8 @@ public class OnGeneralMethodBoundaryAspect : MethodInterceptionAspect
             args.Status |= MethodStatus.Completed;
             OnCompletion(args);
         }
-        #else
+#else
         await executionArgs.ProceedAsync();
-        #endif
+#endif
     }
 }

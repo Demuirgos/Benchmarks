@@ -1,16 +1,13 @@
 ﻿using System.Diagnostics;
 using BenchmarkDotNet.Attributes;
-using Benchmarks.Interception;
-using Benchmarks.Models;
 using BenchmarkDotNet.Running;
-using static TestFunc;
-
 BenchmarkRunner.Run<TestFunc>();
 
 [MemoryDiagnoser]
-public class TestFunc {
-    public IEnumerable<int> ValuesForlow => new int[] { 0, 100, 1000};
-    public IEnumerable<int> ValuesForHigh => new int[] { 100, 1000, 1000000};
+public class TestFunc
+{
+    public IEnumerable<int> ValuesForlow => new int[] { 0, 100, 1000 };
+    public IEnumerable<int> ValuesForHigh => new int[] { 100, 1000, 1000000 };
     [ParamsSource(nameof(ValuesForlow))] public int lowBound { get; set; }
     [ParamsSource(nameof(ValuesForHigh))] public int highBound { get; set; }
 
@@ -20,12 +17,12 @@ public class TestFunc {
     [Benchmark] public async Task<int> SumAsyncClass() => await SumAsync2(lowBound, highBound);
 
 
-    [Monitor(InterceptionMode: InterceptionMode.ExecutionTime, LogDestination : LogDestination.Console)]
+    [Monitor(InterceptionMode: InterceptionMode.ExecutionTime, LogDestination: LogDestination.Console)]
     public static int SumSync1(int n, int k)
         => ActionSync(n, k);
 
-    [Monitor(InterceptionMode: InterceptionMode.ExecutionTime, LogDestination : LogDestination.Console)]
-    public static async Task<int> SumAsync1(int n, int k) 
+    [Monitor(InterceptionMode: InterceptionMode.ExecutionTime, LogDestination: LogDestination.Console)]
+    public static async Task<int> SumAsync1(int n, int k)
         => await ActionAsync(n, k);
 
     public static int SumSync2(int n, int k)
@@ -60,7 +57,7 @@ public class TestFunc {
     }
 }
 
-public class DisposableTimer :IDisposable
+public class DisposableTimer : IDisposable
 {
     private Stopwatch watch = new();
     public DisposableTimer() => watch.Start();
