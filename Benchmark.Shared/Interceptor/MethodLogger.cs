@@ -12,10 +12,7 @@ namespace Benchmarks.Interception;
 [PSerializable]
 [DebuggerStepThrough]
 [AttributeUsage(AttributeTargets.Method)]
-public class MonitorAttribute :
-
-
- OnGeneralMethodBoundaryAspect
+public class MonitorAttribute : OnGeneralMethodBoundaryAspect
 {
 
     [PNonSerialized] private (Assembly Assembly, string Function) CallSourceType;
@@ -64,7 +61,7 @@ public class MonitorAttribute :
     {
         if (!IsInitialized)
         {
-            var method = args.Method;
+            MethodBase method = args.Method;
             CallSourceType = (method.Module.Assembly, method.Name);
             if (!MetricsMetadataExtensions.CallCountKeeper.ContainsKey(CallSourceType.Function))
             {

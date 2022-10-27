@@ -1,0 +1,208 @@
+[INCLUDE=presentation]
+Title         : Benchmark Project 
+Sub Title     : Proof of concept 
+Author        : Ayman Bouchareb
+Affiliation   : Nethermind
+Email         : Ayman@nethermind.io
+Reveal Theme  : solarized
+Beamer Theme  : london
+
+# Content
+
+[TOC]
+
+~ Begin Vertical
+# IDEA
+To have an opt-in frictionless api to flag function for watch :
+
+* Before : 
+```csharp
+public static int ActionSync(int n, int k)
+    => (n - k) * (n + k) / 2;
+```
+* After : 
+```csharp
+[Monitor(InterceptionMode.ExecutionTime, LogDestination.Prometheus)]
+public static int ActionSync(int n, int k)
+    => (n - k) * (n + k) / 2;
+```
+
+* Works with flag :  MONITOR 
+```
+dotnet build ..\Project.Solution.sln /p:DefineConstants="MONITOR"
+```
+
+# OVERVIEW
+Solutions : 
+
+* Proper IOC, and DI
+    - Too Big ?
+* Source Generator?
+    - Can't modify the code (partial maybe ?)
+* AOP
+
+# INTERCEPTION
+~ Begin Columns
+~ Column {width: 100%}
+```csharp
+public static T Action(params...)
+{
+    return SomeResult(params...);
+}
+```
+~
+~ Column {width: 100%}
+    <= Code Normally
+~
+~ End Columns 
+
+~ Begin Columns
+~ Column {width: 100%}
+```csharp 
+public static T Action(params...)
+{
+    startup();
+    try {
+        T result = SomeResult(params...);
+        successed();
+        return result
+    } catch {
+        failed();
+        throw;
+    } finally {
+        finished();
+    }
+}
+```
+~
+~ Column {width: 100%}
+    <= Interception Points
+~
+~ End Columns
+~
+~ End Columns
+
+~ End Vertical
+
+~ Begin Vertical
+# BUILD CYCLE
+
+* the build process will be something like this : 
+![BuildCycle]
+
+[BuildCycle]: out/BuildCycle/BuildCycle.png {margin-left: 15%; width:75%}
+# FUNCTION CYCLE
+
+* the function call process will be something like this : 
+![CallCycle]
+
+[CallCycle]: out/CallCycle/CallCycle.png {margin-left: 15%; width:75%}
+
+# MSBUILD
+
+* MSBuild will use Directory.Build.targets to alter build process : 
+~ Begin Columns
+~ Column {font-size : 0.8em}
+```xml
+<Project>
+	<ItemGroup Condition="$(DefineConstants.Contains("MONITOR"))">
+		<PackageReference Include="PostSharp" Version="6.10.15" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(ProjectName)'!='Generator' AND '$(ProjectName)'!='Interceptor'">
+		<ProjectReference Include="..\Generator\Generator.csproj" OutputItemType="Analyzer"/>
+		<ProjectReference Include="..\Interceptor\Interceptor.csproj"/>
+		<Using Include="Benchmarks.Interception" />
+		<Using Include="Benchmarks.Models" />
+	</ItemGroup>
+</Project>
+```
+~
+~ End Columns
+
+
+# Logger
+
+* Logger is a simple Attribute that will implements the Interception interface :
+    - OnStartup : Inject Timer
+    - OnEnd : Log ExecutionTime
+
+```csharp {font-size : 0.50em}
+[PSerializable][AttributeUsage(AttributeTargets.Method)]
+public class MonitorAttribute : OnGeneralMethodBoundaryAspect
+{
+    public MonitorAttribute(InterceptionMode InterceptionMode, LogDestination LogDestination)
+        => (_interceptionMode, _logDestination) = (InterceptionMode, LogDestination);
+    public override void OnStarting(MethodInterceptionArgs args)
+    {
+        MetricsMetadata AttachedLog = args;
+        AttachedLog.MethodQualifiedName = args.Method.Name;
+        AttachedLog.EmbeddedResource = Stopwatch.StartNew();
+    }
+    public override void OnCompletion(MetricsMetadata logs)
+    {
+        (logs.EmbeddedResource as Stopwatch).Stop();
+        Console.WriteLine($"{logs.MethodQualifiedName} : {timer.ElapsedMilliseconds} ms");
+    }
+}
+
+```
+
+~ End Vertical
+
+~ Begin Vertical
+
+# RESULTS
+
+~ Begin Columns
+~ Column {width: 100%}
+```csharp
+public static void ActionSync(int n, int k) 
+    => Console.WriteLine($"result : {(n - k) * (n + k) / 2}");
+``` 
+~
+~ Column {width: 100%}
+    <= Original Code
+~
+~ End Columns 
+
+~ Begin Columns
+~ Column {width: 100%}
+```csharp
+[Monitor(InterceptionMode.ExecutionTime, LogDestination.Console)]
+public static int ActionSync(int n, int k) 
+    => Console.WriteLine($"result : {(n - k) * (n + k) / 2}");
+``` 
+~
+~ Column {width: 100%}
+    <= Add Attribute
+~
+~ End Columns 
+
+
+
+
+~ Begin Columns
+~ Column {width: 100%}
+```csharp
+dotnet build /p:DefineConstants="MONITOR"
+dotnet run --no-build
+``` 
+~
+~ Column {width: 100%}
+    <= Build with flag and Run
+~
+~ End Columns 
+
+~ Begin Columns
+~ Column {width: 100%}
+```csharp
+ActionSync : 1 ms
+result : 5050
+``` 
+~
+~ Column {width: 100%}
+    <= stdout results :
+~
+~ End Columns 
+
+~ End Vertical

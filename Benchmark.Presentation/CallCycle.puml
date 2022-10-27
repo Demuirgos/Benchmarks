@@ -1,0 +1,14 @@
+@startuml
+(*) -right-> "Call OnStart()"
+-right-> "Try Invoke MethodBody()"
+If "MethodBody() throws Exception" then
+  -left-> [YES] "Call OnError()"
+  -down-> "Rethrow Exception"
+  -right-> "Call OnEnd()"
+  -down-> (*)
+else
+  -right-> [NO]  "Call OnSuccess()"
+  -down->  "Return Result"
+  -left-> "Call OnEnd()"
+  -down-> (*)
+@enduml

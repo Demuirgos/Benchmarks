@@ -1,0 +1,25 @@
+@startuml
+(*) -right-> "start build"
+If "Monitor flag is set" then 
+partition MonitorProcessInject {
+    -left-> [Yes] "Start"
+    -right-> [Yes] "Add Monitoring dependencies"
+    -right-> "Look for Monitor Attribute"
+    If "Found any" then
+    -right-> [Yes] "Inject Interceptor"
+    If "Attribute target is Prometheus" then
+    -down-> [Yes] "Create Metrics class"
+    -left-> "End"
+    else
+    -down-> "End"
+    Endif
+    else
+    -down-> "End"
+    Endif
+}
+--> "Continue Build"
+else
+--> "Continue Build"
+Endif
+-->(*)
+@enduml
