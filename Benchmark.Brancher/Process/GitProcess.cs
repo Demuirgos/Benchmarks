@@ -1,28 +1,25 @@
 using System.Diagnostics;
 public static class GitProcess
 {
-    private static  void RunGitWithCommands(string args) {
-        var process = new Process();
-        process.StartInfo.FileName = "git";
-        process.StartInfo.Arguments = args;
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.RedirectStandardOutput = true;
-        process.StartInfo.RedirectStandardError = true;
-        process.Start();
-        process.WaitForExit();
-        string line;        
-        while ((line = process.StandardOutput.ReadLine()) != null)
-        {
-            Console.WriteLine(line);
-        }
-        process.Close();
+    private static ProcessBuilder RunGitWithCommands(string args, string workingDir = null) {
+        var process = ProcessBuilder.Instance
+            .Create("git")
+            .WithArguments(args)
+            .WithRedirectStandardOutput(
+                LogsHandle : Console.WriteLine
+            )
+            .WithStandaloneWindow(false)
+            .WithWorkingDirectory(workingDir);
+        return process;
     } 
 
-    public static void SwitchTo(string path, string commitHash) {
-        RunGitWithCommands($"--git-dir={path}/.git --work-tree={path} checkout {commitHash}");
+    [Marked]
+    public static async Task SwitchTo(string path, string commitHash) {
+        await RunGitWithCommands($"checkout {commitHash}", path).Run();
     }
 
-    public static void Clone(string repoSource, string folderPath) {
-        RunGitWithCommands($"clone {repoSource} {folderPath}");
+    [Marked]
+    public static async Task Clone(string repoSource, string folderPath) {
+        await RunGitWithCommands($"clone {repoSource} {folderPath}").Run();
     }
 }

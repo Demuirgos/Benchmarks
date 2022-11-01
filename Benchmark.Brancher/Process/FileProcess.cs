@@ -1,7 +1,7 @@
 using System.IO;
+using static BenchProcess;
 public static class FileProcess
 {
-    public static string TempFolder => $"{Path.GetTempPath()}\\TEMP4BENCHMARK"; 
     public static (string ClonePath, string CurrentPath, string TargetPath) CreateTestContainer(string repoUrl, string currentCommit, string targetCommit) {
         // check if the folder exists and delete it
         if (Directory.Exists(TempFolder)) {

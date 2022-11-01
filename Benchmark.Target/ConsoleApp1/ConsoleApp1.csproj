@@ -7,10 +7,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-		<PackageReference Include="PostSharp" Version="6.10.15" />
-		<ProjectReference Include="..\Benchmark.Shared\Benchmarks.Shared.csproj"/>
-		<Using Include="Benchmarks.Interception" />
-	</ItemGroup>
-
 </Project>
