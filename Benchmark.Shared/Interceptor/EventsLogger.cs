@@ -23,13 +23,11 @@ public class MarkedAttribute : OnGeneralMethodBoundaryAspect
     {
         MetricsMetadata AttachedLog = args;
         AttachedLog.MethodQualifiedName = args.Method.Name;
-        var arguments = JsonSerializer.Serialize(args.Arguments);
-        Console.WriteLine($"Running : {args.Method.Name} with Arguments: {arguments}");
+        Console.WriteLine($"Running : {args.Method.Name} ");
         return AttachedLog;
     }
     public override void OnCompletion(MetricsMetadata logs)
     {
-        var returnValue = JsonSerializer.Serialize(logs.Return);
         Console.WriteLine($"Exiting : {logs.MethodQualifiedName} with Status: {logs.Status}");
     }
 }

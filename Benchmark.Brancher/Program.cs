@@ -1,7 +1,3 @@
-﻿// get commandLineArgs from the command line
-// example : 
-// dotnet run "ConsoleApp1.sln" "ConsoleApp1\ConsoleApp1.csproj" "D:\Projects\benchmarks\Benchmark.Target" "7b5f9e3748b35c25a00560f2cc8665018c689b41" "a7f58cc97c0052da29b3cd78c21797e5c1aa0145"
-var commandLineArgs = Environment.GetCommandLineArgs();
-var (slnPath, csprojPath, repoSource, currentCommit, targetCommit)  = (commandLineArgs[1], commandLineArgs[2], commandLineArgs[3], commandLineArgs[4], commandLineArgs[5]);
-await BenchProcess.Process(slnPath, csprojPath, repoSource, currentCommit, targetCommit);
+﻿// dotnet run --repo="D:\Projects\benchmarks\Benchmark.Target" --solution="ConsoleApp1.sln" --project="ConsoleApp1\ConsoleApp1.csproj"  --target="e43e4304c06d1b0457c83da5dd8c591ff1116ca2" --current="d5334deb26802658ca8d22696546d05f3d252703"
+await BenchProcess.Process(ArgsProcess.Process(Environment.GetCommandLineArgs()));
 

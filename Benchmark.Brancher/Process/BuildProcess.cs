@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Reflection;
 public static class DotnetProcess
@@ -17,30 +18,24 @@ public static class DotnetProcess
                 .Run();
     }
     [Marked]
-    public static async Task Run(string path) {
+    public static async Task Run(string path, Action<string> callback = null) {
         await RunDotnetWithCommands($"run --no-build {path}")
             .WithRedirectStandardOutput(true, 
                 (line) => {
-                    if(line.StartsWith("Logs :") || true) {
-                        var projectPath = path.Replace(Path.GetTempPath(), "");
-                        Console.WriteLine($"\t{projectPath} ::> {line}");
-                    }
+                    callback(line);
                 }
             ).Run();
     }
 
     [Marked]
-    public static async Task Launch(string path, string netVersion, string arguments = null) {
+    public static async Task Launch(string path, string netVersion, string arguments = null, Action<string> callback = null) {
         var containingFolder = Path.GetDirectoryName(path);
         var fileName = Path.GetFileNameWithoutExtension(path);
         await ProcessBuilder.Instance.Create($"{containingFolder}\\bin\\Release\\{netVersion}\\{fileName}.exe")
             .WithArguments(arguments)
             .WithRedirectStandardOutput(true, 
                 (line) => {
-                    if(line.StartsWith("Logs :") || true) {
-                        var projectPath = path.Replace(Path.GetTempPath(), "");
-                        Console.WriteLine($"\t{projectPath} ::> {line}");
-                    }
+                    callback(line);
                 }
             ).Run();
     }
