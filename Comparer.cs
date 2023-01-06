@@ -7,241 +7,53 @@ using static EofTestsBase;
 [MemoryDiagnoser]
 public class MyBenchmark
 {
-    public byte[] ByteCodeWithEmptyCodeSection_0 => ScenarioCase.GenerateFormatScenarios(
-        new byte[0][],
-        new byte[0],
-        FormatScenario.None
+    public byte[] BytecodeWithAllInvalidSections => ScenarioCase.GenerateFormatScenarios(
+        Enumerable.Repeat(ScenarioCase.CreateFromScenario(Scenario.Invalid), 32).ToArray(),
+        new byte[0]
     ); 
-    public byte[] ByteCodeWithEmptyCodeSection_1 => ScenarioCase.GenerateFormatScenarios(
-        new byte[1][] { new byte[0] },
-        new byte[0],
-        FormatScenario.None
+    public byte[] BytecodeWithAllValidSections => ScenarioCase.GenerateFormatScenarios(
+        Enumerable.Repeat(ScenarioCase.CreateFromScenario(Scenario.Valid), 32).ToArray(),
+        new byte[0]
     ); 
-    public byte[] ByteCodeWithEmptyCodeSection_100 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Repeat(new byte[0], 100).ToArray(),
-        new byte[0],
-        FormatScenario.None
+    public byte[] BytecodeWithAllMixedSections => ScenarioCase.GenerateFormatScenarios(
+        Enumerable.Range(0, 32).Select(i => ScenarioCase.CreateFromScenario((Scenario)(i % 2))).ToArray(),
+        new byte[0]
     ); 
-    public byte[] ByteCodeWithEmptyCodeSection_1024 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Repeat(new byte[0], 1024).ToArray(),
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithInvalidCodeSection_1 => ScenarioCase.GenerateFormatScenarios(
-        new byte[1][] { ScenarioCase.CreateFromScenario(BodyScenario.UseDeprecatedOpcode)},
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithInvalidCodeSection_100 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Repeat(ScenarioCase.CreateFromScenario(BodyScenario.UseDeprecatedOpcode), 100).ToArray(),
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithInvalidCodeSection_1024 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Repeat(ScenarioCase.CreateFromScenario(BodyScenario.UseDeprecatedOpcode), 1024).ToArray(),
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithAllSectionsValid_1 => ScenarioCase.GenerateFormatScenarios(
-        new byte[1][] { ScenarioCase.CreateFromScenario(BodyScenario.None)},
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithAllSectionsValid_100 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Repeat(ScenarioCase.CreateFromScenario(BodyScenario.None), 100).ToArray(),
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithAllSectionsValid_1024 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Repeat(ScenarioCase.CreateFromScenario(BodyScenario.None), 1024).ToArray(),
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithMixedSections_2 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Range(0, 2).Select(i => {
-            if(i % 2 == 0)
-                return ScenarioCase.CreateFromScenario(BodyScenario.None);
-            else
-                return ScenarioCase.CreateFromScenario(BodyScenario.UseDeprecatedOpcode);
-        }).ToArray(),
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithMixedSections_100 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Range(0, 100).Select(i => {
-            if(i % 2 == 0)
-                return ScenarioCase.CreateFromScenario(BodyScenario.None);
-            else
-                return ScenarioCase.CreateFromScenario(BodyScenario.UseDeprecatedOpcode);
-        }).ToArray(),
-        new byte[0],
-        FormatScenario.None
-    );
-    public byte[] ByteCodeWithMixedSections_1024 => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Range(0, 1024).Select(i => {
-            if(i % 2 == 0)
-                return ScenarioCase.CreateFromScenario(BodyScenario.None);
-            else
-                return ScenarioCase.CreateFromScenario(BodyScenario.UseDeprecatedOpcode);
-        }).ToArray(),
-        new byte[0],
-        FormatScenario.None
-    );
+
 
     [Benchmark]
-    public void ByteCodeWithEmptyCodeSection_0_Parallel()
+    public void Bytecode_With_32_CodeSection_1536B_Each_All_Valid_Parallel()
     {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithEmptyCodeSection_0, out _);
+        PEvmObjectFormat.IsValidEof(BytecodeWithAllValidSections, out _);
     }
 
     [Benchmark]
-    public void ByteCodeWithEmptyCodeSection_0_Sequential()
+    public void Bytecode_With_32_CodeSection_1536B_Each_All_Valid_Sequential()
     {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithEmptyCodeSection_0, out _);
+        SEvmObjectFormat.IsValidEof(BytecodeWithAllValidSections, out _);
+    }
+
+     [Benchmark]
+    public void Bytecode_With_32_CodeSection_1536B_Each_All_Invalid_Parallel()
+    {
+        PEvmObjectFormat.IsValidEof(BytecodeWithAllInvalidSections, out _);
     }
 
     [Benchmark]
-    public void ByteCodeWithEmptyCodeSection_1_Parallel()
+    public void Bytecode_With_32_CodeSection_1536B_Each_All_Invalid_Sequential()
     {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithEmptyCodeSection_1, out _);
+        SEvmObjectFormat.IsValidEof(BytecodeWithAllInvalidSections, out _);
     }
 
     [Benchmark]
-    public void ByteCodeWithEmptyCodeSection_1_Sequential()
+    public void Bytecode_With_32_CodeSection_1536B_Each_Mixed_Parallel()
     {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithEmptyCodeSection_1, out _);
+        PEvmObjectFormat.IsValidEof(BytecodeWithAllMixedSections, out _);
     }
 
     [Benchmark]
-    [ArgumentsSource(nameof(ByteCodeWithEmptyCodeSection_100))]
-    public void ByteCodeWithEmptyCodeSection_100_Parallel()
+    public void Bytecode_With_32_CodeSection_1536B_Each_Mixed_Sequential()
     {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithEmptyCodeSection_100, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithEmptyCodeSection_100_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithEmptyCodeSection_100, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithEmptyCodeSection_1024_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithEmptyCodeSection_1024, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithEmptyCodeSection_1024_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithEmptyCodeSection_1024, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithInvalidCodeSection_1_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithInvalidCodeSection_1, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithInvalidCodeSection_1_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithInvalidCodeSection_1, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithInvalidCodeSection_100_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithInvalidCodeSection_100, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithInvalidCodeSection_100_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithInvalidCodeSection_100, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithInvalidCodeSection_1024_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithInvalidCodeSection_1024, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithInvalidCodeSection_1024_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithInvalidCodeSection_1024, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithAllSectionsValid_1_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithAllSectionsValid_1, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithAllSectionsValid_1_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithAllSectionsValid_1, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithAllSectionsValid_100_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithAllSectionsValid_100, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithAllSectionsValid_100_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithAllSectionsValid_100, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithAllSectionsValid_1024_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithAllSectionsValid_1024, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithAllSectionsValid_1024_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithAllSectionsValid_1024, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithMixedSections_2_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithMixedSections_2, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithMixedSections_2_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithMixedSections_2, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithMixedSections_100_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithMixedSections_100, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithMixedSections_100_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithMixedSections_100, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithMixedSections_1024_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(ByteCodeWithMixedSections_1024, out _);
-    }
-
-    [Benchmark]
-    public void ByteCodeWithMixedSections_1024_Sequential()
-    {
-        SEvmObjectFormat.IsValidEof(ByteCodeWithMixedSections_1024, out _);
+        SEvmObjectFormat.IsValidEof(BytecodeWithAllMixedSections, out _);
     }
 }

@@ -1,7 +1,10 @@
 using System.Buffers.Binary;
 
 public static class Extenstions {
-    
+    public static string ToHexString(this byte[] ba)
+    {
+    return BitConverter.ToString(ba).Replace("-","");
+    }
     public static short ReadEthInt16(this Span<byte> bytes)
     {
         return ReadEthInt16((ReadOnlySpan<byte>)bytes);
