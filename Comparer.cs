@@ -24,9 +24,15 @@ public class MyBenchmark
     }
     
     [Benchmark]
-    public bool  Bitmap_Valid_Bytecode()
+    public bool  Bitmap_Valid_Bytecode_Heap()
     {
         return ByteArrayMethod.ValidateInstructions(ValidBytecode, dummy);
+    }
+    
+    [Benchmark]
+    public bool  Bitmap_Valid_Bytecode_Stack()
+    {
+        return ByteArrayStackMethod.ValidateInstructions(ValidBytecode, dummy);
     }
 
     
@@ -51,7 +57,7 @@ public class MyBenchmark
 
     
     [Benchmark]
-    public bool Bitmap_Invalid_Bytecode()
+    public bool Bitmap_Invalid_Bytecode_Heap()
     {
         return ByteArrayMethod.ValidateInstructions(InvalidBytecode, dummy);
     }
@@ -63,4 +69,10 @@ public class MyBenchmark
         return NaiveSearchMethod.ValidateInstructions(InvalidBytecode, dummy);
     }
 
+    
+    [Benchmark]
+    public bool  Bitmap_Invalid_Bytecode_Stack()
+    {
+        return ByteArrayStackMethod.ValidateInstructions(InvalidBytecode, dummy);
+    }
 }

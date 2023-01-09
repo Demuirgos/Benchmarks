@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Nethermind.Evm.EOF;
 
-internal static class ByteArrayMethod
+internal static class ByteArrayStackMethod
 {
     public const byte VERSION = 0x01;
     internal const byte DYNAMIC_OFFSET = 0; // to mark dynamic offset needs to be added
@@ -22,7 +22,7 @@ internal static class ByteArrayMethod
     public static bool ValidateInstructions(ReadOnlySpan<byte> code, in EofHeader header)
     {
         int pos;
-        byte[] codeBitmap = new byte[(code.Length / 8) + 1 + 4];
+        Span<byte> codeBitmap = stackalloc byte[(code.Length / 8) + 1 + 4];
         SortedSet<int> jumpdests = new();
 
         for (pos = 0; pos < code.Length; pos++)
@@ -43,7 +43,7 @@ internal static class ByteArrayMethod
                 }
 
                 var offset = code.Slice(pos, TWO_BYTE_LENGTH).ReadEthInt16();
-                BitmapHelperOld.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
+                BitmapHelper.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
                 var rjumpdest = offset + TWO_BYTE_LENGTH + pos;
                 jumpdests.Add(rjumpdest);
 
@@ -72,7 +72,7 @@ internal static class ByteArrayMethod
                 }
 
                 var immediateValueSize = ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH;
-                BitmapHelperOld.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
+                BitmapHelper.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
 
                 for (int j = 0; j < count; j++)
                 {
@@ -89,7 +89,7 @@ internal static class ByteArrayMethod
             if (opcode is >= Instruction.PUSH1 and <= Instruction.PUSH32)
             {
                 int len = code[postInstructionByte - 1] - (int)Instruction.PUSH1 + 1;
-                BitmapHelperOld.HandleNumbits(len, ref codeBitmap, ref postInstructionByte);
+                BitmapHelper.HandleNumbits(len, ref codeBitmap, ref postInstructionByte);
             }
             pos = postInstructionByte;
         }
@@ -101,7 +101,7 @@ internal static class ByteArrayMethod
 
         foreach (int jumpdest in jumpdests)
         {
-            if (BitmapHelperOld.IsCodeSegment(codeBitmap, jumpdest))
+            if (BitmapHelper.IsCodeSegment(ref codeBitmap, jumpdest))
             {
                 return false;
             }

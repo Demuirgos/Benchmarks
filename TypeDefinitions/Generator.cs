@@ -51,14 +51,15 @@ public static class EofTestsBase
                 }
             };
             List<byte> bytecode = new();
-            if (scenario.HasFlag(Scenario.Invalid))
-            {
-                bytecode.Add((byte)Instruction.CALLCODE);
-            }
             for(int i = 0; i < 1534;) {
                 int segment = i % codeSegments.Length;
                 bytecode.AddRange(codeSegments[segment]);
                 i += codeSegments[segment].Length;
+                if (scenario.HasFlag(Scenario.Invalid) && i == 1000)
+                {
+                    bytecode.Add((byte)Instruction.CALLCODE);
+                    i++;
+                }
             }
             return bytecode.ToArray();
         }

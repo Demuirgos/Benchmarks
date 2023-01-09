@@ -8,7 +8,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Nethermind.Evm.EOF;
 
@@ -44,7 +43,7 @@ internal static class BitArrayMethod
                     return false;
                 }
 
-                var offset = code.Slice(pos, TWO_BYTE_LENGTH).ReadEthInt16();
+                var offset = code.Slice(pos, TWO_BYTE_LENGTH).ReadEthUInt16();
                 immediatesMask.SetBits(true, pos, pos + 1);
                 var rjumpdest = offset + TWO_BYTE_LENGTH + pos;
                 rjumpdestsMask.Set(rjumpdest, true);

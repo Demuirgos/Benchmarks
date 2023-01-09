@@ -4,7 +4,7 @@
 using System;
 
 namespace Nethermind.Evm;
-public static class BitmapHelperOld
+public static class BitmapHelper
 {
     private const ushort Set2BitsMask = 0b1100_0000_0000_0000;
     private const ushort Set3BitsMask = 0b1110_0000_0000_0000;
@@ -25,6 +25,7 @@ public static class BitmapHelperOld
         // ends with a PUSH32, the algorithm will push zeroes onto the
         // bitvector outside the bounds of the actual code.
         byte[] bitvec = new byte[(code.Length / 8) + 1 + 4];
+        Span<byte> bitvecAsSpan = bitvec.AsSpan();;
 
         for (int pc = 0; pc < code.Length;)
         {
@@ -39,12 +40,12 @@ public static class BitmapHelperOld
 
             if (numbits == 0) continue;
 
-            HandleNumbits(numbits, ref bitvec, ref pc);
+            HandleNumbits(numbits, ref bitvecAsSpan, ref pc);
         }
         return bitvec;
     }
 
-    public static void HandleNumbits(int numbits, ref byte[] bitvec, ref int pc)
+    public static void HandleNumbits(int numbits, scoped ref Span<byte> bitvec, scoped ref int pc)
     {
         if (numbits >= 8)
         {
@@ -96,17 +97,17 @@ public static class BitmapHelperOld
     /// <summary>
     /// Checks if the position is in a code segment.
     /// </summary>
-    public static bool IsCodeSegment(byte[] bitvec, int pos)
+    public static bool IsCodeSegment(ref Span<byte> bitvec, int pos)
     {
         return (bitvec[pos / 8] & (0x80 >> (pos % 8))) == 0;
     }
 
-    private static void Set1(this byte[] bitvec, int pos)
+    private static void Set1(this ref Span<byte> bitvec, int pos)
     {
         bitvec[pos / 8] |= _lookup[pos % 8];
     }
 
-    private static void SetN(this byte[] bitvec, int pos, UInt16 flag)
+    private static void SetN(this ref Span<byte> bitvec, int pos, UInt16 flag)
     {
         ushort a = (ushort)(flag >> (pos % 8));
         bitvec[pos / 8] |= (byte)(a >> 8);
@@ -119,14 +120,14 @@ public static class BitmapHelperOld
         }
     }
 
-    private static void Set8(this byte[] bitvec, int pos)
+    private static void Set8(this ref Span<byte> bitvec, int pos)
     {
         byte a = (byte)(0xFF >> (pos % 8));
         bitvec[pos / 8] |= a;
         bitvec[pos / 8 + 1] = (byte)~a;
     }
 
-    private static void Set16(this byte[] bitvec, int pos)
+    private static void Set16(this ref Span<byte> bitvec, int pos)
     {
         byte a = (byte)(0xFF >> (pos % 8));
         bitvec[pos / 8] |= a;
