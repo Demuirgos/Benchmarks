@@ -7,53 +7,60 @@ using static EofTestsBase;
 [MemoryDiagnoser]
 public class MyBenchmark
 {
-    public byte[] BytecodeWithAllInvalidSections => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Repeat(ScenarioCase.CreateFromScenario(Scenario.Invalid), 32).ToArray(),
-        new byte[0]
-    ); 
-    public byte[] BytecodeWithAllValidSections => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Repeat(ScenarioCase.CreateFromScenario(Scenario.Valid), 32).ToArray(),
-        new byte[0]
-    ); 
-    public byte[] BytecodeWithAllMixedSections => ScenarioCase.GenerateFormatScenarios(
-        Enumerable.Range(0, 32).Select(i => ScenarioCase.CreateFromScenario((Scenario)(i % 2))).ToArray(),
-        new byte[0]
-    ); 
-
+    public byte[] InvalidBytecode = ScenarioCase.CreateFromScenario(Scenario.Invalid);
+    public byte[] ValidBytecode = ScenarioCase.CreateFromScenario(Scenario.Valid);
+    EofHeader dummy = new EofHeader();
 
     [Benchmark]
-    public void Bytecode_With_32_CodeSection_1536B_Each_All_Valid_Parallel()
+    public bool Bitarray_Valid_Bytecode()
     {
-        PEvmObjectFormat.IsValidEof(BytecodeWithAllValidSections, out _);
+        return BitArrayMethod.ValidateInstructions(ValidBytecode, dummy);
     }
 
     [Benchmark]
-    public void Bytecode_With_32_CodeSection_1536B_Each_All_Valid_Sequential()
+    public bool BinarySearch_Valid_Bytecode()
     {
-        SEvmObjectFormat.IsValidEof(BytecodeWithAllValidSections, out _);
+        return BinarySearchMethod.ValidateInstructions(ValidBytecode, dummy);
+    }
+    
+    [Benchmark]
+    public bool  Bitmap_Valid_Bytecode()
+    {
+        return ByteArrayMethod.ValidateInstructions(ValidBytecode, dummy);
     }
 
-     [Benchmark]
-    public void Bytecode_With_32_CodeSection_1536B_Each_All_Invalid_Parallel()
+    
+    [Benchmark]
+    public bool  NaiveWay_Valid_Bytecode()
     {
-        PEvmObjectFormat.IsValidEof(BytecodeWithAllInvalidSections, out _);
+        return NaiveSearchMethod.ValidateInstructions(ValidBytecode, dummy);
     }
 
     [Benchmark]
-    public void Bytecode_With_32_CodeSection_1536B_Each_All_Invalid_Sequential()
+    public bool  Bitarray_Invalid_Bytecode()
     {
-        SEvmObjectFormat.IsValidEof(BytecodeWithAllInvalidSections, out _);
+        return BitArrayMethod.ValidateInstructions(InvalidBytecode, dummy);
     }
 
-    [Benchmark]
-    public void Bytecode_With_32_CodeSection_1536B_Each_Mixed_Parallel()
-    {
-        PEvmObjectFormat.IsValidEof(BytecodeWithAllMixedSections, out _);
-    }
 
     [Benchmark]
-    public void Bytecode_With_32_CodeSection_1536B_Each_Mixed_Sequential()
+    public bool BinarySearch_Invalid_Bytecode()
     {
-        SEvmObjectFormat.IsValidEof(BytecodeWithAllMixedSections, out _);
+        return BinarySearchMethod.ValidateInstructions(InvalidBytecode, dummy);
     }
+
+    
+    [Benchmark]
+    public bool Bitmap_Invalid_Bytecode()
+    {
+        return ByteArrayMethod.ValidateInstructions(InvalidBytecode, dummy);
+    }
+
+
+    [Benchmark]
+    public bool NaiveWay_Invalid_Bytecode()
+    {
+        return NaiveSearchMethod.ValidateInstructions(InvalidBytecode, dummy);
+    }
+
 }

@@ -1,6 +1,32 @@
 using System.Buffers.Binary;
+using System.Collections;
+using System.Numerics;
 
 public static class Extenstions {
+    public static void SetBits(this BitArray thisArr, bool value, params int[] positions)
+    {
+        foreach (int pos in positions)
+        {
+            thisArr.Set(pos, value);
+        }
+    }
+
+    public static void SetBits(this BitArray thisArr, bool value, Range range)
+    {
+        int rangeMasked = (1 << range.End.Value) - (1 << range.Start.Value);
+        byte[] rangeMaskedArr = rangeMasked.ToBigEndianByteArray();
+        Array.Resize(ref rangeMaskedArr, thisArr.Count / 8);
+        BitArray arr = new BitArray(rangeMaskedArr);
+        thisArr.Or(arr);
+    }
+    public static bool Includes(this Range @this, int value)
+            => value >= @this.Start.Value && value <= @this.End.Value;
+
+    public static bool Includes(this Range @this, int value, int len)
+    {
+        var (offset, length) = @this.GetOffsetAndLength(len);
+        return value >= offset && value < length + offset;
+    }
     public static string ToHexString(this byte[] ba)
     {
     return BitConverter.ToString(ba).Replace("-","");

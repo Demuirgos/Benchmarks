@@ -1,6 +1,12 @@
+// SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
+// SPDX-License-Identifier: LGPL-3.0-only
+
 using System.Diagnostics.CodeAnalysis;
+using Nethermind.Evm.EOF;
+
 namespace Nethermind.Evm
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public enum Instruction : byte
     {
         STOP = 0x00,
@@ -72,6 +78,9 @@ namespace Nethermind.Evm
         MSIZE = 0x59,
         GAS = 0x5a,
         JUMPDEST = 0x5b,
+        RJUMP = 0x5c, // RelativeStaticJumps
+        RJUMPI = 0x5d, // RelativeStaticJumps
+        RJUMPV = 0x5e, // RelativeStaticJumps
         BEGINSUB = 0x5c, // SubroutinesEnabled
         RETURNSUB = 0x5d, // SubroutinesEnabled
         JUMPSUB = 0x5e, // SubroutinesEnabled
@@ -168,6 +177,14 @@ namespace Nethermind.Evm
 
     public static class InstructionExtensions
     {
+        public static int GetImmediateCount(this Instruction instruction, byte jumpvCount = 0)
+            => instruction switch
+            {
+                Instruction.RJUMP or Instruction.RJUMPI => 2,
+                Instruction.RJUMPV => jumpvCount * 2 + 1,
+                >= Instruction.PUSH0 and <= Instruction.PUSH32 => instruction - Instruction.PUSH0,
+                _ => 0
+            };
         public static bool IsTerminating(this Instruction instruction) => instruction switch
         {
             Instruction.INVALID or Instruction.STOP or Instruction.RETURN or Instruction.REVERT => true,
@@ -187,6 +204,10 @@ namespace Nethermind.Evm
                 _ => true
             };
         }
+        public static bool IsOnlyForEofBytecode(this Instruction instruction) => instruction switch
+        {
+            Instruction.RJUMP or Instruction.RJUMPI or Instruction.RJUMPV => true,
+            _ => false
+        };
     }
 }
-

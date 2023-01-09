@@ -26,18 +26,39 @@ public static class EofTestsBase
     {
         public static byte[] CreateFromScenario(Scenario scenario)
         {
+            byte[][] codeSegments = new[] {
+                new byte[] {
+                    (byte)Instruction.PUSH1,
+                    0x01,
+                },
+                new byte[] {
+                    (byte)Instruction.PUSH8,
+                    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
+                },
+                new byte[] {
+                    (byte)Instruction.RJUMP,
+                    0x00,0x00,
+                },
+                new byte[] {
+                    (byte)Instruction.RJUMPI,
+                    0x00,0x00
+                },
+                new byte[] {
+                    (byte)Instruction.RJUMPV,
+                    0x02,
+                    0x00, 0x00,
+                    0x00, 0x10
+                }
+            };
             List<byte> bytecode = new();
-            int opcodeCount = 0;
             if (scenario.HasFlag(Scenario.Invalid))
             {
                 bytecode.Add((byte)Instruction.CALLCODE);
-                opcodeCount += 2;
-
             }
-            for(int i = 0; i < 1534; i+=2) {
-                bytecode.Add((byte)Instruction.PUSH1);
-                bytecode.Add(0x01);
-                opcodeCount += 2;
+            for(int i = 0; i < 1534;) {
+                int segment = i % codeSegments.Length;
+                bytecode.AddRange(codeSegments[segment]);
+                i += codeSegments[segment].Length;
             }
             return bytecode.ToArray();
         }
