@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics.X86;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
-// BenchmarkRunner.Run<MyBenchmark>();
+BenchmarkRunner.Run<MyBenchmark>();
 
 // /*
 // TestCase = {
@@ -12,13 +12,13 @@ using BenchmarkDotNet.Running;
 // }
 // */
 
-var benchy = new MyBenchmark();
-// call functions on my benchmark and write result
-// get all method in benchy using refletion
-benchy.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-    .Where(meth => meth.CustomAttributes.Any(attr => attr.AttributeType == typeof(BenchmarkAttribute)))
-    .ToList()
-    .ForEach(method => {
-        Console.Write($"{method.Name} : ");
-        Console.WriteLine(method.Invoke(benchy, null));
-    });
+// var benchy = new MyBenchmark();
+// // call functions on my benchmark and write result
+// // get all method in benchy using refletion
+// benchy.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+//     .Where(meth => meth.CustomAttributes.Any(attr => attr.AttributeType == typeof(BenchmarkAttribute)))
+//     .ToList()
+//     .ForEach(method => {
+//         Console.Write($"{method.Name} : ");
+//         Console.WriteLine(method.Invoke(benchy, null));
+//     });
