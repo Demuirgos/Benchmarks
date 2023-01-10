@@ -13,8 +13,6 @@ BenchmarkRunner.Run<MyBenchmark>();
 // */
 
 // var benchy = new MyBenchmark();
-// // call functions on my benchmark and write result
-// // get all method in benchy using refletion
 // benchy.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
 //     .Where(meth => meth.CustomAttributes.Any(attr => attr.AttributeType == typeof(BenchmarkAttribute)))
 //     .ToList()

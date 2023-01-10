@@ -100,8 +100,6 @@ internal static class TwoArrayPoolMethodFast
             return false;
         }
 
-        UInt128 test = 13;
-        
         if(codeBitmap.CheckCollisionFast(jumpBitmap)) {
                 return false;
         }
