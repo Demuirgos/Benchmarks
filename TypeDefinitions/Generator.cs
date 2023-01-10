@@ -52,7 +52,7 @@ public static class EofTestsBase
             };
             List<byte> bytecode = new();
             int j = 0;
-            for(int i = 0; i < 49152;j++) {
+            for(int i = 0; i < 49000;j++) {
                 int segment = i % codeSegments.Length;
                 bytecode.AddRange(codeSegments[segment]);
                 i += codeSegments[segment].Length;

@@ -20,3 +20,4 @@ BenchmarkRunner.Run<MyBenchmark>();
 //         Console.Write($"{method.Name} : ");
 //         Console.WriteLine(method.Invoke(benchy, null));
 //     });
+// Console.WriteLine(benchy.Bitmap_Valid_Bytecode_2_ArrayPool());

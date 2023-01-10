@@ -23,7 +23,7 @@ internal static class TwoArrayPoolMethod
     public static bool ValidateInstructions(ReadOnlySpan<byte> code, in EofHeader header)
     {
         int pos;
-        ArrayPool<byte> pool = ArrayPool<byte>.Shared;
+        ArrayPool<byte> pool = ArrayPool<byte>.Create();
         Span<byte> codeBitmap = pool.Rent((code.Length / 8) + 1 + 4);
         Span<byte> jumpBitmap = pool.Rent((code.Length / 8) + 1 + 4);
 

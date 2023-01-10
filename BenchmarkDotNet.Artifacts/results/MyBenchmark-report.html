@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>MyBenchmark-20230110-181510</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.13.3, OS=Windows 11 (10.0.22621.963)
+Intel Core i5-8265U CPU 1.60GHz (Whiskey Lake), 1 CPU, 8 logical and 4 physical cores
+.NET SDK=7.0.100
+  [Host]     : .NET 7.0.0 (7.0.22.51805), X64 RyuJIT AVX2
+  DefaultJob : .NET 7.0.0 (7.0.22.51805), X64 RyuJIT AVX2
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>                                  Method</th><th>    Mean</th><th> Error</th><th>StdDev</th><th>Gen0</th><th>Gen1</th><th>Gen2</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>Bitarray_Valid_Bytecode</td><td>37,251.9 &mu;s</td><td>676.60 &mu;s</td><td>599.79 &mu;s</td><td>38714.2857</td><td>-</td><td>-</td><td>121593847 B</td>
+</tr><tr><td>BinarySearch_Valid_Bytecode</td><td>3,542.7 &mu;s</td><td>36.85 &mu;s</td><td>32.67 &mu;s</td><td>171.8750</td><td>121.0938</td><td>121.0938</td><td>956609 B</td>
+</tr><tr><td>Bitmap_Valid_Bytecode_Heap</td><td>2,155.5 &mu;s</td><td>22.27 &mu;s</td><td>20.83 &mu;s</td><td>89.8438</td><td>42.9688</td><td>-</td><td>398623 B</td>
+</tr><tr><td>Bitmap_Valid_Bytecode_Stack</td><td>2,144.0 &mu;s</td><td>20.31 &mu;s</td><td>18.01 &mu;s</td><td>89.8438</td><td>27.3438</td><td>-</td><td>392463 B</td>
+</tr><tr><td>Bitmap_Valid_Bytecode_2_Stacks</td><td>727.6 &mu;s</td><td>5.07 &mu;s</td><td>4.74 &mu;s</td><td>-</td><td>-</td><td>-</td><td>2 B</td>
+</tr><tr><td>Bitmap_Valid_Bytecode_2_Stacks_With_PpCnt</td><td>744.4 &mu;s</td><td>4.90 &mu;s</td><td>4.35 &mu;s</td><td>-</td><td>-</td><td>-</td><td>2 B</td>
+</tr><tr><td>Bitmap_Valid_Bytecode_ArrayPool</td><td>2,123.7 &mu;s</td><td>18.74 &mu;s</td><td>16.61 &mu;s</td><td>85.9375</td><td>46.8750</td><td>-</td><td>400673 B</td>
+</tr><tr><td>Bitmap_Valid_Bytecode_2_ArrayPool</td><td>766.5 &mu;s</td><td>15.24 &mu;s</td><td>13.51 &mu;s</td><td>7.8125</td><td>-</td><td>-</td><td>24519 B</td>
+</tr><tr><td>Bitmap_Valid_Bytecode_2_ArrayPool_With_PpCnt</td><td>778.3 &mu;s</td><td>5.73 &mu;s</td><td>4.79 &mu;s</td><td>-</td><td>-</td><td>-</td><td>2 B</td>
+</tr><tr><td>NaiveWay_Valid_Bytecode</td><td>1,416,975.0 &mu;s</td><td>14,218.83 &mu;s</td><td>13,300.30 &mu;s</td><td>-</td><td>-</td><td>-</td><td>919120 B</td>
+</tr><tr><td>Bitarray_Invalid_Bytecode</td><td>35,973.9 &mu;s</td><td>564.49 &mu;s</td><td>528.02 &mu;s</td><td>38733.3333</td><td>-</td><td>-</td><td>121593899 B</td>
+</tr><tr><td>BinarySearch_Invalid_Bytecode</td><td>2,089.4 &mu;s</td><td>38.36 &mu;s</td><td>34.01 &mu;s</td><td>140.6250</td><td>121.0938</td><td>121.0938</td><td>916984 B</td>
+</tr><tr><td>Bitmap_Invalid_Bytecode_Heap</td><td>1,924.4 &mu;s</td><td>15.49 &mu;s</td><td>12.93 &mu;s</td><td>85.9375</td><td>44.9219</td><td>-</td><td>398388 B</td>
+</tr><tr><td>Bitmap_Invalid_Bytecode_Stack</td><td>1,845.6 &mu;s</td><td>16.96 &mu;s</td><td>15.03 &mu;s</td><td>89.8438</td><td>31.2500</td><td>-</td><td>392235 B</td>
+</tr><tr><td>Bitmap_Invalid_Bytecode_2_Stacks</td><td>706.8 &mu;s</td><td>4.31 &mu;s</td><td>4.03 &mu;s</td><td>-</td><td>-</td><td>-</td><td>2 B</td>
+</tr><tr><td>Bitmap_Invalid_Bytecode_2_Stacks_With_PpCnt</td><td>736.6 &mu;s</td><td>6.57 &mu;s</td><td>6.15 &mu;s</td><td>-</td><td>-</td><td>-</td><td>2 B</td>
+</tr><tr><td>Bitmap_Invalid_Bytecode_ArrayPool</td><td>1,843.1 &mu;s</td><td>12.66 &mu;s</td><td>11.22 &mu;s</td><td>83.9844</td><td>41.0156</td><td>-</td><td>400441 B</td>
+</tr><tr><td>Bitmap_Invalid_Bytecode_2_ArrayPool</td><td>712.8 &mu;s</td><td>4.32 &mu;s</td><td>3.83 &mu;s</td><td>7.8125</td><td>-</td><td>-</td><td>24519 B</td>
+</tr><tr><td>Bitmap_Invalid_Bytecode_2_ArrayPool_With_PpCnt</td><td>741.5 &mu;s</td><td>5.86 &mu;s</td><td>5.48 &mu;s</td><td>-</td><td>-</td><td>-</td><td>2 B</td>
+</tr><tr><td>NaiveWay_Invalid_Bytecode</td><td>2,077.4 &mu;s</td><td>10.10 &mu;s</td><td>8.44 &mu;s</td><td>148.4375</td><td>121.0938</td><td>121.0938</td><td>916996 B</td>
+</tr></tbody></table>
+</body>
+</html>
