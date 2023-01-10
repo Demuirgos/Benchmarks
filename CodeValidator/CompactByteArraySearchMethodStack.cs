@@ -42,9 +42,9 @@ internal static class ByteArrayStackMethod
                     return false;
                 }
 
-                var offset = code.Slice(pos, TWO_BYTE_LENGTH).ReadEthInt16();
+                var offset = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthInt16();
                 BitmapHelper.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
-                var rjumpdest = offset + TWO_BYTE_LENGTH + pos;
+                var rjumpdest = offset + TWO_BYTE_LENGTH + postInstructionByte;
                 jumpdests.Add(rjumpdest);
 
                 if (rjumpdest < 0 || rjumpdest >= code.Length)
@@ -76,8 +76,8 @@ internal static class ByteArrayStackMethod
 
                 for (int j = 0; j < count; j++)
                 {
-                    var offset = code.Slice(pos + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthInt16();
-                    var rjumpdest = offset + immediateValueSize + pos;
+                    var offset = code.Slice(postInstructionByte + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthInt16();
+                    var rjumpdest = offset + immediateValueSize + postInstructionByte;
                     jumpdests.Add(rjumpdest);
                     if (rjumpdest < 0 || rjumpdest >= code.Length)
                     {

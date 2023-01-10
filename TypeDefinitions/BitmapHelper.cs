@@ -133,4 +133,12 @@ public static class BitmapHelperOld
         bitvec[pos / 8 + 1] = 0xFF;
         bitvec[pos / 8 + 2] = (byte)~a;
     }
+    
+    public static bool checkCollision(this ref Span<byte> codeSegments, ref Span<byte> jumpmask) {
+        for (int i = 0; i < Math.Min(codeSegments.Length, jumpmask.Length); i++) {
+            codeSegments[i] &= jumpmask[i];
+            if(codeSegments[i] != 0) return true;
+        }
+        return false;
+    } 
 }

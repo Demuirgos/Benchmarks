@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Nethermind.Evm.EOF;
 
-internal static class BitArrayMethod
+internal static class ByteArrayStackMethod2
 {
     public const byte VERSION = 0x01;
     internal const byte DYNAMIC_OFFSET = 0; // to mark dynamic offset needs to be added
@@ -22,9 +22,8 @@ internal static class BitArrayMethod
     public static bool ValidateInstructions(ReadOnlySpan<byte> code, in EofHeader header)
     {
         int pos;
-        int nearestPowerOf8 = code.Length / 8 + 1;
-        BitArray immediatesMask = new BitArray(nearestPowerOf8 * 8);
-        BitArray rjumpdestsMask = new BitArray(nearestPowerOf8 * 8);
+        Span<byte> codeBitmap = stackalloc byte[(code.Length / 8) + 1 + 4];
+        Span<byte> jumpBitmap = stackalloc byte[(code.Length / 8) + 1 + 4];
 
         for (pos = 0; pos < code.Length; pos++)
         {
@@ -43,16 +42,14 @@ internal static class BitArrayMethod
                     return false;
                 }
 
-                var offset = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthUInt16();
-                immediatesMask.SetBits(true, postInstructionByte, postInstructionByte + 1);
+                var offset = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthInt16();
+                BitmapHelper.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
                 var rjumpdest = offset + TWO_BYTE_LENGTH + postInstructionByte;
-                rjumpdestsMask.Set(rjumpdest, true);
-
+                BitmapHelper.HandleNumbits(ONE_BYTE_LENGTH, ref jumpBitmap, ref rjumpdest);
                 if (rjumpdest < 0 || rjumpdest >= code.Length)
                 {
                     return false;
                 }
-                postInstructionByte += TWO_BYTE_LENGTH;
             }
 
             if (opcode is Instruction.RJUMPV)
@@ -74,26 +71,24 @@ internal static class BitArrayMethod
                 }
 
                 var immediateValueSize = ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH;
-                immediatesMask.SetBits(true, postInstructionByte..(postInstructionByte + immediateValueSize - 1));
+                BitmapHelper.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
 
                 for (int j = 0; j < count; j++)
                 {
                     var offset = code.Slice(postInstructionByte + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthInt16();
                     var rjumpdest = offset + immediateValueSize + postInstructionByte;
-                    rjumpdestsMask.Set(rjumpdest, true);
+                    BitmapHelper.HandleNumbits(ONE_BYTE_LENGTH, ref jumpBitmap, ref rjumpdest);
                     if (rjumpdest < 0 || rjumpdest >= code.Length)
                     {
                         return false;
                     }
                 }
-                postInstructionByte += immediateValueSize;
             }
 
             if (opcode is >= Instruction.PUSH1 and <= Instruction.PUSH32)
             {
                 int len = code[postInstructionByte - 1] - (int)Instruction.PUSH1 + 1;
-                immediatesMask.SetBits(true, postInstructionByte..(postInstructionByte + len - 1));
-                postInstructionByte += len;
+                BitmapHelper.HandleNumbits(len, ref codeBitmap, ref postInstructionByte);
             }
             pos = postInstructionByte;
         }
@@ -103,13 +98,8 @@ internal static class BitArrayMethod
             return false;
         }
 
-        BitArray result = rjumpdestsMask.Or(immediatesMask);
-        for (int i = 0; i < result.Length; i++)
-        {
-            if (result.Get(i))
-            {
+        if(codeBitmap.checkCollision(ref jumpBitmap)) {
                 return false;
-            }
         }
         return true;
     }
