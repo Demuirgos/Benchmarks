@@ -23,7 +23,7 @@ internal static class ArrayPoolMethod
     public static bool ValidateInstructions(ReadOnlySpan<byte> code, in EofHeader header)
     {
         int pos;
-        ArrayPool<byte> pool = ArrayPool<byte>.Shared;
+        ArrayPool<byte> pool = ArrayPool<byte>.Create();
         Span<byte> codeBitmap = pool.Rent((code.Length / 8) + 1 + 4);
         SortedSet<int> jumpdests = new();
 
