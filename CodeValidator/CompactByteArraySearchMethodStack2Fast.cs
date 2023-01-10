@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Nethermind.Evm.EOF;
 
-internal static class TwoByteArrayStackMethod
+internal static class TwoByteArrayStackMethodFast
 {
     public const byte VERSION = 0x01;
     internal const byte DYNAMIC_OFFSET = 0; // to mark dynamic offset needs to be added
@@ -98,7 +98,9 @@ internal static class TwoByteArrayStackMethod
             return false;
         }
 
-        if(codeBitmap.CheckCollisionOld(ref jumpBitmap)) {
+        UInt128 test = 13;
+        
+        if(codeBitmap.CheckCollisionFast(jumpBitmap)) {
                 return false;
         }
         return true;

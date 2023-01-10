@@ -1,6 +1,9 @@
-﻿using BenchmarkDotNet.Running;
+﻿using System.Reflection;
+using System.Runtime.Intrinsics.X86;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
 
-BenchmarkRunner.Run<MyBenchmark>();
+// BenchmarkRunner.Run<MyBenchmark>();
 
 // /*
 // TestCase = {
@@ -9,16 +12,13 @@ BenchmarkRunner.Run<MyBenchmark>();
 // }
 // */
 
-// var benchy = new MyBenchmark();
-// // call functions on my benchmark and write result
-// Console.WriteLine(benchy.BinarySearch_Valid_Bytecode());
-// Console.WriteLine(benchy.NaiveWay_Valid_Bytecode());
-// Console.WriteLine(benchy.Bitarray_Valid_Bytecode());
-// Console.WriteLine(benchy.Bitmap_Valid_Bytecode_Heap());
-// Console.WriteLine(benchy.Bitmap_Valid_Bytecode_Stack());
-
-// Console.WriteLine(benchy.NaiveWay_Invalid_Bytecode());
-// Console.WriteLine(benchy.BinarySearch_Invalid_Bytecode());
-// Console.WriteLine(benchy.Bitarray_Invalid_Bytecode());
-// Console.WriteLine(benchy.Bitmap_Invalid_Bytecode_Heap());
-// Console.WriteLine(benchy.Bitmap_Invalid_Bytecode_Stack());
+var benchy = new MyBenchmark();
+// call functions on my benchmark and write result
+// get all method in benchy using refletion
+benchy.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+    .Where(meth => meth.CustomAttributes.Any(attr => attr.AttributeType == typeof(BenchmarkAttribute)))
+    .ToList()
+    .ForEach(method => {
+        Console.Write($"{method.Name} : ");
+        Console.WriteLine(method.Invoke(benchy, null));
+    });
