@@ -11,6 +11,13 @@ public class MyBenchmark
     public byte[] ValidBytecode = ScenarioCase.CreateFromScenario(Scenario.Valid);
     EofHeader dummy = new EofHeader();
 
+    
+    [Benchmark]
+    public bool  NaiveWay_Valid_Bytecode()
+    {
+        return NaiveSearchMethod.ValidateInstructions(ValidBytecode, dummy);
+    }
+
     [Benchmark]
     public bool Bitarray_Valid_Bytecode()
     {
@@ -21,12 +28,6 @@ public class MyBenchmark
     public bool BinarySearch_Valid_Bytecode()
     {
         return BinarySearchMethod.ValidateInstructions(ValidBytecode, dummy);
-    }
-    
-    [Benchmark]
-    public bool  Bitmap_Valid_Bytecode_Heap()
-    {
-        return ByteArrayMethod.ValidateInstructions(ValidBytecode, dummy);
     }
     
     [Benchmark]
@@ -62,13 +63,13 @@ public class MyBenchmark
     [Benchmark]
     public bool  Bitmap_Valid_Bytecode_2_ArrayPool_With_PpCnt()
     {
-        return TwoByteArrayStackMethodFast.ValidateInstructions(ValidBytecode, dummy);
+        return TwoArrayPoolMethodFast.ValidateInstructions(ValidBytecode, dummy);
     }
-    
+
     [Benchmark]
-    public bool  NaiveWay_Valid_Bytecode()
+    public bool NaiveWay_Invalid_Bytecode()
     {
-        return NaiveSearchMethod.ValidateInstructions(ValidBytecode, dummy);
+        return NaiveSearchMethod.ValidateInstructions(InvalidBytecode, dummy);
     }
 
     [Benchmark]
@@ -77,18 +78,10 @@ public class MyBenchmark
         return BitArrayMethod.ValidateInstructions(InvalidBytecode, dummy);
     }
 
-
     [Benchmark]
     public bool BinarySearch_Invalid_Bytecode()
     {
         return BinarySearchMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
-
-    
-    [Benchmark]
-    public bool Bitmap_Invalid_Bytecode_Heap()
-    {
-        return ByteArrayMethod.ValidateInstructions(InvalidBytecode, dummy);
     }
 
     [Benchmark]
@@ -128,9 +121,4 @@ public class MyBenchmark
         return TwoByteArrayStackMethodFast.ValidateInstructions(InvalidBytecode, dummy);
     }
     
-    [Benchmark]
-    public bool NaiveWay_Invalid_Bytecode()
-    {
-        return NaiveSearchMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
 }
