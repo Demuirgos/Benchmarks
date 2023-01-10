@@ -56,11 +56,14 @@ public static class EofTestsBase
                 int segment = i % codeSegments.Length;
                 bytecode.AddRange(codeSegments[segment]);
                 i += codeSegments[segment].Length;
-                if (scenario.HasFlag(Scenario.Invalid) && j == 123)
-                {
-                    bytecode.Add((byte)Instruction.CALLCODE);
-                    i++;
-                }
+            }
+            
+            if (scenario.HasFlag(Scenario.Invalid))
+            {
+                bytecode.Add((byte)Instruction.RJUMP);
+                bytecode.Add(0x00);
+                bytecode.Add(0x01);
+
             }
             bytecode.Add(0x00);
             return bytecode.ToArray();

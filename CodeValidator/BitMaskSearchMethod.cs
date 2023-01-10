@@ -26,7 +26,7 @@ internal static class BitArrayMethod
         BitArray immediatesMask = new BitArray(nearestPowerOf8 * 8);
         BitArray rjumpdestsMask = new BitArray(nearestPowerOf8 * 8);
 
-        for (pos = 0; pos < code.Length; pos++)
+        for (pos = 0; pos < code.Length; )
         {
             Instruction opcode = (Instruction)code[pos];
             int postInstructionByte = pos + 1;
@@ -103,7 +103,7 @@ internal static class BitArrayMethod
             return false;
         }
 
-        BitArray result = rjumpdestsMask.Or(immediatesMask);
+        BitArray result = rjumpdestsMask.And(immediatesMask);
         for (int i = 0; i < result.Length; i++)
         {
             if (result.Get(i))

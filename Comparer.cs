@@ -46,6 +46,24 @@ public class MyBenchmark
     {
         return TwoByteArrayStackMethodFast.ValidateInstructions(ValidBytecode, dummy);
     }
+
+    [Benchmark]
+    public bool  Bitmap_Valid_Bytecode_ArrayPool()
+    {
+        return ArrayPoolMethod.ValidateInstructions(ValidBytecode, dummy);
+    }
+    
+    [Benchmark]
+    public bool  Bitmap_Valid_Bytecode_2_ArrayPool()
+    {
+        return TwoArrayPoolMethod.ValidateInstructions(ValidBytecode, dummy);
+    }
+
+    [Benchmark]
+    public bool  Bitmap_Valid_Bytecode_2_ArrayPool_With_PpCnt()
+    {
+        return TwoByteArrayStackMethodFast.ValidateInstructions(ValidBytecode, dummy);
+    }
     
     [Benchmark]
     public bool  NaiveWay_Valid_Bytecode()
@@ -87,6 +105,25 @@ public class MyBenchmark
 
     [Benchmark]
     public bool  Bitmap_Invalid_Bytecode_2_Stacks_With_PpCnt()
+    {
+        return TwoByteArrayStackMethodFast.ValidateInstructions(InvalidBytecode, dummy);
+    }
+
+    
+    [Benchmark]
+    public bool  Bitmap_Invalid_Bytecode_ArrayPool()
+    {
+        return ArrayPoolMethod.ValidateInstructions(InvalidBytecode, dummy);
+    }
+    
+    [Benchmark]
+    public bool  Bitmap_Invalid_Bytecode_2_ArrayPool()
+    {
+        return TwoArrayPoolMethod.ValidateInstructions(InvalidBytecode, dummy);
+    }
+
+    [Benchmark]
+    public bool  Bitmap_Invalid_Bytecode_2_ArrayPool_With_PpCnt()
     {
         return TwoByteArrayStackMethodFast.ValidateInstructions(InvalidBytecode, dummy);
     }

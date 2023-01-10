@@ -24,7 +24,7 @@ internal static class NaiveSearchMethod
         List<Range> immediates = new();
         SortedSet<int> rjumpdests = new();
 
-        for (pos = 0; pos < code.Length; pos++)
+        for (pos = 0; pos < code.Length; )
         {
             Instruction opcode = (Instruction)code[pos];
             int postInstructionByte = pos + 1;

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 using System;
+using System.Buffers;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -10,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Nethermind.Evm.EOF;
 
-internal static class BinarySearchMethod
+internal static class ArrayPoolMethod
 {
     public const byte VERSION = 0x01;
     internal const byte DYNAMIC_OFFSET = 0; // to mark dynamic offset needs to be added
@@ -21,8 +23,9 @@ internal static class BinarySearchMethod
     public static bool ValidateInstructions(ReadOnlySpan<byte> code, in EofHeader header)
     {
         int pos;
-        List<Range> immediates = new();
-        SortedSet<int> rjumpdests = new();
+        ArrayPool<byte> pool = ArrayPool<byte>.Shared;
+        Span<byte> codeBitmap = pool.Rent((code.Length / 8) + 1 + 4);
+        SortedSet<int> jumpdests = new();
 
         for (pos = 0; pos < code.Length; )
         {
@@ -42,14 +45,14 @@ internal static class BinarySearchMethod
                 }
 
                 var offset = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthInt16();
-                immediates.Add(new Range(postInstructionByte, postInstructionByte + 1));
                 var rjumpdest = offset + TWO_BYTE_LENGTH + postInstructionByte;
-                rjumpdests.Add(rjumpdest);
+                jumpdests.Add(rjumpdest);
+
                 if (rjumpdest < 0 || rjumpdest >= code.Length)
                 {
                     return false;
                 }
-                postInstructionByte += TWO_BYTE_LENGTH;
+                BitmapHelper.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
             }
 
             if (opcode is Instruction.RJUMPV)
@@ -71,26 +74,24 @@ internal static class BinarySearchMethod
                 }
 
                 var immediateValueSize = ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH;
-                immediates.Add(new Range(postInstructionByte, postInstructionByte + immediateValueSize - 1));
+
                 for (int j = 0; j < count; j++)
                 {
                     var offset = code.Slice(postInstructionByte + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthInt16();
                     var rjumpdest = offset + immediateValueSize + postInstructionByte;
-                    rjumpdests.Add(rjumpdest);
-
+                    jumpdests.Add(rjumpdest);
                     if (rjumpdest < 0 || rjumpdest >= code.Length)
                     {
                         return false;
                     }
                 }
-                postInstructionByte += immediateValueSize;
+                BitmapHelper.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
             }
 
             if (opcode is >= Instruction.PUSH1 and <= Instruction.PUSH32)
             {
-                int len = opcode - Instruction.PUSH1 + 1;
-                immediates.Add(new Range(postInstructionByte, postInstructionByte + len - 1));
-                postInstructionByte += len;
+                int len = code[postInstructionByte - 1] - (int)Instruction.PUSH1 + 1;
+                BitmapHelper.HandleNumbits(len, ref codeBitmap, ref postInstructionByte);
             }
             pos = postInstructionByte;
         }
@@ -100,20 +101,13 @@ internal static class BinarySearchMethod
             return false;
         }
 
-        var list = rjumpdests.ToList();
-        foreach (var range in immediates)
+        foreach (int jumpdest in jumpdests)
         {
-            var index = list.BinarySearch(range.Start.Value);
-            if (index >= 0)
-            {
-                return false;
-            }
-            else if (~index != list.Count && list[~index] < range.End.Value)
+            if (!BitmapHelper.IsCodeSegment(ref codeBitmap, jumpdest))
             {
                 return false;
             }
         }
-
         return true;
     }
 }

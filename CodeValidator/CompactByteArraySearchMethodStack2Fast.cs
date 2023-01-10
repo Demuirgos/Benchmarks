@@ -25,7 +25,7 @@ internal static class TwoByteArrayStackMethodFast
         Span<byte> codeBitmap = stackalloc byte[(code.Length / 8) + 1 + 4];
         Span<byte> jumpBitmap = stackalloc byte[(code.Length / 8) + 1 + 4];
 
-        for (pos = 0; pos < code.Length; pos++)
+        for (pos = 0; pos < code.Length; )
         {
             Instruction opcode = (Instruction)code[pos];
             int postInstructionByte = pos + 1;
@@ -43,13 +43,13 @@ internal static class TwoByteArrayStackMethodFast
                 }
 
                 var offset = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthInt16();
-                BitmapHelper.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
                 var rjumpdest = offset + TWO_BYTE_LENGTH + postInstructionByte;
-                BitmapHelper.HandleNumbits(ONE_BYTE_LENGTH, ref jumpBitmap, ref rjumpdest);
                 if (rjumpdest < 0 || rjumpdest >= code.Length)
                 {
                     return false;
                 }
+                BitmapHelper.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
+                BitmapHelper.HandleNumbits(ONE_BYTE_LENGTH, ref jumpBitmap, ref rjumpdest);
             }
 
             if (opcode is Instruction.RJUMPV)
@@ -71,23 +71,23 @@ internal static class TwoByteArrayStackMethodFast
                 }
 
                 var immediateValueSize = ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH;
-                BitmapHelper.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
 
                 for (int j = 0; j < count; j++)
                 {
                     var offset = code.Slice(postInstructionByte + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthInt16();
                     var rjumpdest = offset + immediateValueSize + postInstructionByte;
-                    BitmapHelper.HandleNumbits(ONE_BYTE_LENGTH, ref jumpBitmap, ref rjumpdest);
                     if (rjumpdest < 0 || rjumpdest >= code.Length)
                     {
                         return false;
                     }
+                    BitmapHelper.HandleNumbits(ONE_BYTE_LENGTH, ref jumpBitmap, ref rjumpdest);
                 }
+                BitmapHelper.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
             }
 
             if (opcode is >= Instruction.PUSH1 and <= Instruction.PUSH32)
             {
-                int len = code[postInstructionByte - 1] - (int)Instruction.PUSH1 + 1;
+                int len = opcode - Instruction.PUSH1 + 1;
                 BitmapHelper.HandleNumbits(len, ref codeBitmap, ref postInstructionByte);
             }
             pos = postInstructionByte;
@@ -98,8 +98,6 @@ internal static class TwoByteArrayStackMethodFast
             return false;
         }
 
-        UInt128 test = 13;
-        
         if(codeBitmap.CheckCollisionFast(jumpBitmap)) {
                 return false;
         }

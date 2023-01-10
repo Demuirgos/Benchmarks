@@ -25,7 +25,7 @@ internal static class ByteArrayMethod
         byte[] codeBitmap = new byte[(code.Length / 8) + 1 + 4];
         SortedSet<int> jumpdests = new();
 
-        for (pos = 0; pos < code.Length; pos++)
+        for (pos = 0; pos < code.Length; )
         {
             Instruction opcode = (Instruction)code[pos];
             int postInstructionByte = pos + 1;
@@ -43,7 +43,6 @@ internal static class ByteArrayMethod
                 }
 
                 var offset = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthInt16();
-                BitmapHelperOld.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
                 var rjumpdest = offset + TWO_BYTE_LENGTH + postInstructionByte;
                 jumpdests.Add(rjumpdest);
 
@@ -51,6 +50,7 @@ internal static class ByteArrayMethod
                 {
                     return false;
                 }
+                BitmapHelperOld.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
             }
 
             if (opcode is Instruction.RJUMPV)
@@ -72,7 +72,6 @@ internal static class ByteArrayMethod
                 }
 
                 var immediateValueSize = ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH;
-                BitmapHelperOld.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
 
                 for (int j = 0; j < count; j++)
                 {
@@ -84,6 +83,7 @@ internal static class ByteArrayMethod
                         return false;
                     }
                 }
+                BitmapHelperOld.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
             }
 
             if (opcode is >= Instruction.PUSH1 and <= Instruction.PUSH32)
@@ -101,7 +101,7 @@ internal static class ByteArrayMethod
 
         foreach (int jumpdest in jumpdests)
         {
-            if (BitmapHelperOld.IsCodeSegment(codeBitmap, jumpdest))
+            if (!BitmapHelperOld.IsCodeSegment(codeBitmap, jumpdest))
             {
                 return false;
             }
