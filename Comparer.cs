@@ -7,118 +7,33 @@ using static EofTestsBase;
 [MemoryDiagnoser]
 public class MyBenchmark
 {
-    public byte[] InvalidBytecode = ScenarioCase.CreateFromScenario(Scenario.Invalid);
-    public byte[] ValidBytecode = ScenarioCase.CreateFromScenario(Scenario.Valid);
+    public byte[] InvalidBytecode = ScenarioCase.GenerateFormatScenarios(Scenario.Invalid);
+    public byte[] ValidBytecode = ScenarioCase.GenerateFormatScenarios(Scenario.Valid);
     EofHeader dummy = new EofHeader();
 
     
     [Benchmark]
-    public bool  NaiveWay_Valid_Bytecode()
+    public bool  OldWay_Valid_Bytecode()
     {
-        return NaiveSearchMethod.ValidateInstructions(ValidBytecode, dummy);
+        return EvmObjectFormatO.IsValidEof(ValidBytecode, out _);
     }
 
     [Benchmark]
-    public bool Bitarray_Valid_Bytecode()
+    public bool  OldWay_Invalid_Bytecode()
     {
-        return BitArrayMethod.ValidateInstructions(ValidBytecode, dummy);
+        return EvmObjectFormatO.IsValidEof(InvalidBytecode, out _);
     }
 
     [Benchmark]
-    public bool BinarySearch_Valid_Bytecode()
+    public bool  NewWay_Valid_Bytecode()
     {
-        return BinarySearchMethod.ValidateInstructions(ValidBytecode, dummy);
-    }
-    
-    [Benchmark]
-    public bool  Bitmap_Valid_Bytecode_Stack()
-    {
-        return ByteArrayStackMethod.ValidateInstructions(ValidBytecode, dummy);
+        return EvmObjectFormatN.IsValidEof(ValidBytecode, out _);
     }
 
     [Benchmark]
-    public bool  Bitmap_Valid_Bytecode_2_Stacks()
+    public bool  NewWay_Invalid_Bytecode()
     {
-        return TwoByteArrayStackMethod.ValidateInstructions(ValidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool  Bitmap_Valid_Bytecode_2_Stacks_With_PpCnt()
-    {
-        return TwoByteArrayStackMethodFast.ValidateInstructions(ValidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool  Bitmap_Valid_Bytecode_ArrayPool()
-    {
-        return ArrayPoolMethod.ValidateInstructions(ValidBytecode, dummy);
-    }
-    
-    [Benchmark]
-    public bool  Bitmap_Valid_Bytecode_2_ArrayPool()
-    {
-        return TwoArrayPoolMethod.ValidateInstructions(ValidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool  Bitmap_Valid_Bytecode_2_ArrayPool_With_PpCnt()
-    {
-        return TwoArrayPoolMethodFast.ValidateInstructions(ValidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool NaiveWay_Invalid_Bytecode()
-    {
-        return NaiveSearchMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool  Bitarray_Invalid_Bytecode()
-    {
-        return BitArrayMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool BinarySearch_Invalid_Bytecode()
-    {
-        return BinarySearchMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool  Bitmap_Invalid_Bytecode_Stack()
-    {
-        return ByteArrayStackMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
-    
-    [Benchmark]
-    public bool  Bitmap_Invalid_Bytecode_2_Stacks()
-    {
-        return TwoByteArrayStackMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool  Bitmap_Invalid_Bytecode_2_Stacks_With_PpCnt()
-    {
-        return TwoByteArrayStackMethodFast.ValidateInstructions(InvalidBytecode, dummy);
-    }
-
-    
-    [Benchmark]
-    public bool  Bitmap_Invalid_Bytecode_ArrayPool()
-    {
-        return ArrayPoolMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
-    
-    [Benchmark]
-    public bool  Bitmap_Invalid_Bytecode_2_ArrayPool()
-    {
-        return TwoArrayPoolMethod.ValidateInstructions(InvalidBytecode, dummy);
-    }
-
-    [Benchmark]
-    public bool  Bitmap_Invalid_Bytecode_2_ArrayPool_With_PpCnt()
-    {
-        return TwoByteArrayStackMethodFast.ValidateInstructions(InvalidBytecode, dummy);
+        return EvmObjectFormatN.IsValidEof(InvalidBytecode, out _);
     }
     
 }

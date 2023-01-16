@@ -1,13 +1,10 @@
-// SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
-// SPDX-License-Identifier: LGPL-3.0-only
-
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
 namespace Nethermind.Evm;
-public static class BitmapHelper
+public static class BitmapHelperSpan
 {
     private const ushort Set2BitsMask = 0b1100_0000_0000_0000;
     private const ushort Set3BitsMask = 0b1110_0000_0000_0000;
@@ -37,8 +34,8 @@ public static class BitmapHelper
 
             int numbits = op switch
             {
-                Instruction.RJUMPV => op.GetImmediateCount(code[pc]),
-                _ => op.GetImmediateCount(),
+                Instruction.RJUMPV => op.GetImmediateCount(false, code[pc]),
+                _ => op.GetImmediateCount(false),
             };
 
             if (numbits == 0) continue;

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Nethermind.Evm.EOF;
 
@@ -77,6 +78,7 @@ namespace Nethermind.Evm
         PC = 0x58,
         MSIZE = 0x59,
         GAS = 0x5a,
+        NOP = 0x5b,
         JUMPDEST = 0x5b,
         RJUMP = 0x5c, // RelativeStaticJumps
         RJUMPI = 0x5d, // RelativeStaticJumps
@@ -165,6 +167,8 @@ namespace Nethermind.Evm
 
         CREATE = 0xf0,
         CALL = 0xf1,
+        CALLF = 0xb0, // FunctionSection
+        RETF = 0xb1, // FunctionSection
         CALLCODE = 0xf2,
         RETURN = 0xf3,
         DELEGATECALL = 0xf4, // DelegateCallEnabled
@@ -177,17 +181,18 @@ namespace Nethermind.Evm
 
     public static class InstructionExtensions
     {
-        public static int GetImmediateCount(this Instruction instruction, byte jumpvCount = 0)
+        public static int GetImmediateCount(this Instruction instruction, bool IsEofContext, byte jumpvCount = 0)
             => instruction switch
             {
-                Instruction.RJUMP or Instruction.RJUMPI => 2,
-                Instruction.RJUMPV => jumpvCount * 2 + 1,
+                Instruction.RJUMP or Instruction.RJUMPI => IsEofContext ? EvmObjectFormatN.Eof1.TWO_BYTE_LENGTH : 0,
+                Instruction.RJUMPV => IsEofContext ? jumpvCount * EvmObjectFormatN.Eof1.TWO_BYTE_LENGTH + EvmObjectFormatN.Eof1.ONE_BYTE_LENGTH : 0,
                 >= Instruction.PUSH0 and <= Instruction.PUSH32 => instruction - Instruction.PUSH0,
                 _ => 0
             };
         public static bool IsTerminating(this Instruction instruction) => instruction switch
         {
-            Instruction.INVALID or Instruction.STOP or Instruction.RETURN or Instruction.REVERT => true,
+            Instruction.RETF or Instruction.INVALID or Instruction.STOP or Instruction.RETURN or Instruction.REVERT => true,
+            // Instruction.SELFDESTRUCT => true
             _ => false
         };
 
@@ -200,13 +205,120 @@ namespace Nethermind.Evm
 
             return instruction switch
             {
+                Instruction.PC => !IsEofContext,
                 Instruction.CALLCODE or Instruction.SELFDESTRUCT => !IsEofContext,
+                Instruction.JUMPI or Instruction.JUMP => !IsEofContext,
+                Instruction.CALLF or Instruction.RETF => IsEofContext,
+                Instruction.BEGINSUB or Instruction.RETURNSUB or Instruction.JUMPSUB => true,
                 _ => true
             };
         }
+
+        //Note() : Extensively test this, refactor it, 
+        public static (int InputCount, int OutputCount, int immediates) StackRequirements(this Instruction instruction) => instruction switch
+        {
+            Instruction.STOP => (0, 0, 0),
+            Instruction.ADD => (2, 1, 0),
+            Instruction.MUL => (2, 1, 0),
+            Instruction.SUB => (2, 1, 0),
+            Instruction.DIV => (2, 1, 0),
+            Instruction.SDIV => (2, 1, 0),
+            Instruction.MOD => (2, 1, 0),
+            Instruction.SMOD => (2, 1, 0),
+            Instruction.ADDMOD => (3, 1, 0),
+            Instruction.MULMOD => (3, 1, 0),
+            Instruction.EXP => (2, 1, 0),
+            Instruction.SIGNEXTEND => (2, 1, 0),
+            Instruction.LT => (2, 1, 0),
+            Instruction.GT => (2, 1, 0),
+            Instruction.SLT => (2, 1, 0),
+            Instruction.SGT => (2, 1, 0),
+            Instruction.EQ => (2, 1, 0),
+            Instruction.ISZERO => (1, 1, 0),
+            Instruction.AND => (2, 1, 0),
+            Instruction.OR => (2, 1, 0),
+            Instruction.XOR => (2, 1, 0),
+            Instruction.NOT => (1, 1, 0),
+            Instruction.BYTE => (2, 1, 0),
+            Instruction.SHL => (2, 1, 0),
+            Instruction.SHR => (2, 1, 0),
+            Instruction.SAR => (2, 1, 0),
+            Instruction.SHA3 => (2, 1, 0),
+            Instruction.ADDRESS => (0, 1, 0),
+            Instruction.BALANCE => (1, 1, 0),
+            Instruction.ORIGIN => (0, 1, 0),
+            Instruction.CALLER => (0, 1, 0),
+            Instruction.CALLVALUE => (0, 1, 0),
+            Instruction.CALLDATALOAD => (1, 1, 0),
+            Instruction.CALLDATASIZE => (0, 1, 0),
+            Instruction.CALLDATACOPY => (3, 0, 0),
+            Instruction.CODESIZE => (0, 1, 0),
+            Instruction.CODECOPY => (3, 0, 0),
+            Instruction.GASPRICE => (0, 1, 0),
+            Instruction.EXTCODESIZE => (1, 1, 0),
+            Instruction.EXTCODECOPY => (4, 0, 0),
+            Instruction.RETURNDATASIZE => (0, 1, 0),
+            Instruction.RETURNDATACOPY => (3, 0, 0),
+            Instruction.EXTCODEHASH => (1, 1, 0),
+            Instruction.BLOCKHASH => (1, 1, 0),
+            Instruction.COINBASE => (0, 1, 0),
+            Instruction.TIMESTAMP => (0, 1, 0),
+            Instruction.NUMBER => (0, 1, 0),
+            Instruction.PREVRANDAO => (0, 1, 0),
+            Instruction.GASLIMIT => (0, 1, 0),
+            Instruction.CHAINID => (0, 1, 0),
+            Instruction.SELFBALANCE => (0, 1, 0),
+            Instruction.BASEFEE => (0, 1, 0),
+            Instruction.POP => (1, 0, 0),
+            Instruction.MLOAD => (1, 1, 0),
+            Instruction.MSTORE => (2, 0, 0),
+            Instruction.MSTORE8 => (2, 0, 0),
+            Instruction.SLOAD => (1, 1, 0),
+            Instruction.SSTORE => (2, 0, 0),
+            Instruction.MSIZE => (0, 1, 0),
+            Instruction.GAS => (0, 1, 0),
+            Instruction.JUMPDEST => (0, 0, 0),
+            Instruction.RJUMP => (0, 0, 2),
+            Instruction.RJUMPI => (1, 0, 2),
+            Instruction.RJUMPV => (1, 0, 4),
+            >= Instruction.PUSH0 and <= Instruction.PUSH32 => (0, 1, instruction - Instruction.PUSH0),
+            >= Instruction.DUP1 and <= Instruction.DUP16 => (instruction - Instruction.DUP1 + 1, instruction - Instruction.DUP1 + 2, 0),
+            >= Instruction.SWAP1 and <= Instruction.SWAP16 => (instruction - Instruction.SWAP1 + 2, instruction - Instruction.SWAP1 + 2, 0),
+            Instruction.LOG0 => (2, 0, 0),
+            Instruction.LOG1 => (3, 0, 0),
+            Instruction.LOG2 => (4, 0, 0),
+            Instruction.LOG3 => (5, 0, 0),
+            Instruction.LOG4 => (6, 0, 0),
+            Instruction.CALLF => (0, 0, 2),
+            Instruction.RETF => (0, 0, 0),
+            Instruction.CREATE => (3, 1, 0),
+            Instruction.CALL => (7, 1, 0),
+            Instruction.RETURN => (2, 0, 0),
+            Instruction.DELEGATECALL => (6, 1, 0),
+            Instruction.CREATE2 => (4, 1, 0),
+            Instruction.STATICCALL => (6, 1, 0),
+            Instruction.REVERT => (2, 0, 0),
+            Instruction.INVALID => (0, 0, 0),
+            _ => throw new NotImplementedException($"Instruction {instruction} not implemented")
+        };
+
+        public static string? GetName(this Instruction instruction, bool isPostMerge = false, bool isEof = false)
+        {
+            return instruction switch
+            {
+                Instruction.PREVRANDAO => isPostMerge ? "PREVRANDAO" : "DIFFICULTY",
+                Instruction.RJUMP => isEof ? "RJUMP" : "BEGINSUB",
+                Instruction.RJUMPI => isEof ? "RJUMPI" : "RETURNSUB",
+                Instruction.RJUMPV => isEof ? "RJUMPV" : "JUMPSUB",
+                Instruction.JUMPDEST => isEof ? "NOP" : "JUMPDEST",
+                _ => Enum.IsDefined(instruction) ? Enum.GetName(instruction) : null,
+            };
+        }
+
         public static bool IsOnlyForEofBytecode(this Instruction instruction) => instruction switch
         {
             Instruction.RJUMP or Instruction.RJUMPI or Instruction.RJUMPV => true,
+            Instruction.RETF or Instruction.CALLF => true,
             _ => false
         };
     }

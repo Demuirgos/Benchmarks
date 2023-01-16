@@ -52,7 +52,7 @@ public static class EofTestsBase
             };
             List<byte> bytecode = new();
             int j = 0;
-            for(int i = 0; i < 49000;j++) {
+            for(int i = 0; i < 1000; j++) {
                 int segment = i % codeSegments.Length;
                 bytecode.AddRange(codeSegments[segment]);
                 i += codeSegments[segment].Length;
@@ -69,8 +69,11 @@ public static class EofTestsBase
             return bytecode.ToArray();
         }
 
-        public static byte[] GenerateFormatScenarios(byte[][] functions, byte[] data)
+        public static byte[] GenerateFormatScenarios(Scenario scenario)
         {
+            byte[][] functions = Enumerable.Range(0, 30).Select(i => i == 15 ? CreateFromScenario(scenario) : CreateFromScenario(Scenario.Valid)).ToArray();
+            byte[] data = new byte[0];
+
             int eofPrefixSize =
                 2 + 1 /*EF00 + version */;
             int typeSectionHeaderSize =
