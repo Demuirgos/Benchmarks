@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Nethermind.Evm.EOF;
 
-internal static class EvmObjectFormatO
+internal static class EvmObjectFormatPP
 {
     private interface IEofVersionHandler
     {
-        bool ValidateBody(ReadOnlySpan<byte> code, EofHeader header);
+        bool ValidateBody(ReadOnlyMemory<byte> code, EofHeader header);
         bool TryParseEofHeader(ReadOnlySpan<byte> code, [NotNullWhen(true)] out EofHeader? header);
     }
 
@@ -23,7 +23,7 @@ internal static class EvmObjectFormatO
     private const byte VERSION_OFFSET = TWO_BYTE_LENGTH; // magic lenght
 
     private static readonly Dictionary<byte, IEofVersionHandler> _eofVersionHandlers = new();
-    static EvmObjectFormatO()
+    static EvmObjectFormatPP()
     {
         _eofVersionHandlers.Add(Eof1.VERSION, new Eof1());
     }
@@ -35,11 +35,12 @@ internal static class EvmObjectFormatO
     /// <returns></returns>
     public static bool IsEof(ReadOnlySpan<byte> container) => container.StartsWith(MAGIC);
 
-    public static bool IsValidEof(ReadOnlySpan<byte> container, out EofHeader? header)
+    public static bool IsValidEof(ReadOnlyMemory<byte> container, out EofHeader? header)
     {
+        ReadOnlySpan<byte> containerAsSpan = container.Span;
         if (container.Length >= VERSION_OFFSET
-            && _eofVersionHandlers.TryGetValue(container[VERSION_OFFSET], out IEofVersionHandler handler)
-            && handler.TryParseEofHeader(container, out header))
+            && _eofVersionHandlers.TryGetValue(containerAsSpan[VERSION_OFFSET], out IEofVersionHandler handler)
+            && handler.TryParseEofHeader(containerAsSpan, out header))
         {
             EofHeader h = header.Value;
             if (handler.ValidateBody(container, h))
@@ -78,15 +79,15 @@ internal static class EvmObjectFormatO
         internal const byte MINIMUM_TYPESECTION_SIZE = 4;
         internal const byte MINIMUM_CODESECTION_SIZE = 1;
 
-        internal const byte KIND_TYPE_OFFSET = VERSION_OFFSET + EvmObjectFormatO.ONE_BYTE_LENGTH; // version length
-        internal const byte TYPE_SIZE_OFFSET = KIND_TYPE_OFFSET + EvmObjectFormatO.ONE_BYTE_LENGTH; // kind type length
-        internal const byte KIND_CODE_OFFSET = TYPE_SIZE_OFFSET + EvmObjectFormatO.TWO_BYTE_LENGTH; // type size length
-        internal const byte NUM_CODE_SECTIONS_OFFSET = KIND_CODE_OFFSET + EvmObjectFormatO.ONE_BYTE_LENGTH; // kind code length
-        internal const byte CODESIZE_OFFSET = NUM_CODE_SECTIONS_OFFSET + EvmObjectFormatO.TWO_BYTE_LENGTH; // num code sections length
+        internal const byte KIND_TYPE_OFFSET = VERSION_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH; // version length
+        internal const byte TYPE_SIZE_OFFSET = KIND_TYPE_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH; // kind type length
+        internal const byte KIND_CODE_OFFSET = TYPE_SIZE_OFFSET + EvmObjectFormatPP.TWO_BYTE_LENGTH; // type size length
+        internal const byte NUM_CODE_SECTIONS_OFFSET = KIND_CODE_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH; // kind code length
+        internal const byte CODESIZE_OFFSET = NUM_CODE_SECTIONS_OFFSET + EvmObjectFormatPP.TWO_BYTE_LENGTH; // num code sections length
         internal const byte KIND_DATA_OFFSET = CODESIZE_OFFSET + DYNAMIC_OFFSET; // all code size length
-        internal const byte DATA_SIZE_OFFSET = KIND_DATA_OFFSET + EvmObjectFormatO.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // kind data length + all code size length
-        internal const byte TERMINATOR_OFFSET = DATA_SIZE_OFFSET + EvmObjectFormatO.TWO_BYTE_LENGTH + DYNAMIC_OFFSET; // data size length + all code size length
-        internal const byte HEADER_END_OFFSET = TERMINATOR_OFFSET + EvmObjectFormatO.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // terminator length + all code size length
+        internal const byte DATA_SIZE_OFFSET = KIND_DATA_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // kind data length + all code size length
+        internal const byte TERMINATOR_OFFSET = DATA_SIZE_OFFSET + EvmObjectFormatPP.TWO_BYTE_LENGTH + DYNAMIC_OFFSET; // data size length + all code size length
+        internal const byte HEADER_END_OFFSET = TERMINATOR_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // terminator length + all code size length
         internal const byte DYNAMIC_OFFSET = 0; // to mark dynamic offset needs to be added
         internal const byte TWO_BYTE_LENGTH = 2;// indicates the number of bytes to skip for immediates
         internal const byte ONE_BYTE_LENGTH = 1; // indicates the length of the count immediate of jumpv
@@ -109,14 +110,14 @@ internal static class EvmObjectFormatO
         internal const ushort RETURN_STACK_MAX_HEIGHT = MAXIMUM_NUM_CODE_SECTIONS; // the size in the type sectionn allocated to each function section
 
         internal const ushort MINIMUM_SIZE = HEADER_END_OFFSET
-                                            + EvmObjectFormatO.TWO_BYTE_LENGTH // one code size
+                                            + EvmObjectFormatPP.TWO_BYTE_LENGTH // one code size
                                             + MINIMUM_TYPESECTION_SIZE // minimum type section body size
                                             + MINIMUM_CODESECTION_SIZE; // minimum code section body size;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int CalculateHeaderSize(int codeSections) =>
-            HEADER_END_OFFSET + codeSections * EvmObjectFormatO.TWO_BYTE_LENGTH;
+            HEADER_END_OFFSET + codeSections * EvmObjectFormatPP.TWO_BYTE_LENGTH;
 
         public bool TryParseEofHeader(ReadOnlySpan<byte> container, out EofHeader? header)
         {
@@ -175,7 +176,7 @@ internal static class EvmObjectFormatO
                 return false;
             }
 
-            int codeSizeLenght = numberOfCodeSections * EvmObjectFormatO.TWO_BYTE_LENGTH;
+            int codeSizeLenght = numberOfCodeSections * EvmObjectFormatPP.TWO_BYTE_LENGTH;
             int dynamicOffset = codeSizeLenght;
 
             // we need to be able to parse header + all code sizes
@@ -193,7 +194,7 @@ internal static class EvmObjectFormatO
             SectionHeader[] codeSections = new SectionHeader[numberOfCodeSections];
             for (ushort pos = 0; pos < numberOfCodeSections; pos++)
             {
-                int currentCodeSizeOffset = CODESIZE_OFFSET + pos * EvmObjectFormatO.TWO_BYTE_LENGTH; // offset of pos'th code size
+                int currentCodeSizeOffset = CODESIZE_OFFSET + pos * EvmObjectFormatPP.TWO_BYTE_LENGTH; // offset of pos'th code size
                 SectionHeader codeSection = new()
                 {
                     Start = typeSection.EndOffset + codeSectionsSizeUpToNow,
@@ -239,14 +240,14 @@ internal static class EvmObjectFormatO
             return true;
         }
 
-        public bool ValidateBody(ReadOnlySpan<byte> container, EofHeader header)
+        public bool ValidateBody(ReadOnlyMemory<byte> container, EofHeader header)
         {
             int startOffset = CalculateHeaderSize(header.CodeSections.Length);
             int calculatedCodeLength = header.TypeSection.Size
                 + header.CodeSectionsSize
                 + header.DataSection.Size;
             SectionHeader[]? codeSections = header.CodeSections;
-            ReadOnlySpan<byte> contractBody = container[startOffset..];
+            ReadOnlySpan<byte> contractBody = container.Span[startOffset..];
             (int typeSectionStart, ushort typeSectionSize) = header.TypeSection;
 
 
@@ -265,29 +266,28 @@ internal static class EvmObjectFormatO
                 return false;
             }
 
-            ReadOnlySpan<byte> typesection = container.Slice(typeSectionStart, typeSectionSize);
-            if (!ValidateTypeSection(typesection))
+            ReadOnlyMemory<byte> typesection = container.Slice(typeSectionStart, typeSectionSize);
+            if (!ValidateTypeSection(typesection.Span))
             {
                 return false;
             }
 
-            for (int sectionIdx = 0; sectionIdx < header.CodeSections.Length; sectionIdx++)
+            bool validSections = true;
+            Parallel.For(0, header.CodeSections.Length, (sectionIdx, state) =>
             {
                 SectionHeader sectionHeader = header.CodeSections[sectionIdx];
                 (int codeSectionStartOffset, int codeSectionSize) = sectionHeader;
-                ReadOnlySpan<byte> code = container.Slice(codeSectionStartOffset, codeSectionSize);
-                if (!ValidateInstructions(code, header))
+                ReadOnlySpan<byte> code = container.Span.Slice(codeSectionStartOffset, codeSectionSize);
+                if (!ValidateInstructions(code, header) ||
+                    !ValidateStackState(sectionIdx, code, typesection.Span, header))
                 {
-                    return false;
+                    state.Stop();
+                    validSections = false;
+                    return;
                 }
+            });
 
-                if (!ValidateStackState(sectionIdx, code, typesection, header))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return validSections;
         }
 
         bool ValidateTypeSection(ReadOnlySpan<byte> types)
@@ -327,111 +327,115 @@ internal static class EvmObjectFormatO
         }
         bool ValidateInstructions(ReadOnlySpan<byte> code, in EofHeader header)
         {
-            int pos;
-            Span<byte> codeBitmap = stackalloc byte[(code.Length / 8) + 1 + 4];
-            SortedSet<int> jumpdests = new();
-
-            for (pos = 0; pos < code.Length;)
+            ArrayPool<byte> pool = ArrayPool<byte>.Shared;
+            byte[] codeBitmap = pool.Rent((code.Length / BYTE_BIT_COUNT) + 1);
+            byte[] jumpdests = pool.Rent((code.Length / BYTE_BIT_COUNT) + 1);
+            try
             {
-                Instruction opcode = (Instruction)code[pos];
-                int postInstructionByte = pos + 1;
+                int pos;
 
-                if (!opcode.IsValid(IsEofContext: true))
+                for (pos = 0; pos < code.Length;)
                 {
-                    return false;
-                }
+                    Instruction opcode = (Instruction)code[pos];
+                    int postInstructionByte = pos + 1;
 
-                if (opcode is Instruction.RJUMP or Instruction.RJUMPI)
-                {
-                    if (postInstructionByte + TWO_BYTE_LENGTH > code.Length)
+                    if (!opcode.IsValid(IsEofContext: true))
                     {
                         return false;
                     }
 
-                    var offset = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthInt16();
-                    var rjumpdest = offset + TWO_BYTE_LENGTH + postInstructionByte;
-                    jumpdests.Add(rjumpdest);
-
-                    BitmapHelperSpan.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
-                    if (rjumpdest < 0 || rjumpdest >= code.Length)
+                    if (opcode is Instruction.RJUMP or Instruction.RJUMPI)
                     {
-                        return false;
-                    }
-                }
+                        if (postInstructionByte + TWO_BYTE_LENGTH > code.Length)
+                        {
+                            return false;
+                        }
 
-                if (opcode is Instruction.RJUMPV)
-                {
-                    if (postInstructionByte + TWO_BYTE_LENGTH > code.Length)
-                    {
-                        return false;
-                    }
+                        var offset = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthInt16();
+                        var rjumpdest = offset + TWO_BYTE_LENGTH + postInstructionByte;
 
-                    byte count = code[postInstructionByte];
-                    if (count < MINIMUMS_ACCEPTABLE_JUMPT_JUMPTABLE_LENGTH)
-                    {
-                        return false;
-                    }
-
-                    if (postInstructionByte + ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH > code.Length)
-                    {
-                        return false;
-                    }
-
-                    var immediateValueSize = ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH;
-                    for (int j = 0; j < count; j++)
-                    {
-                        var offset = code.Slice(postInstructionByte + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthInt16();
-                        var rjumpdest = offset + immediateValueSize + postInstructionByte;
-                        jumpdests.Add(rjumpdest);
                         if (rjumpdest < 0 || rjumpdest >= code.Length)
                         {
                             return false;
                         }
+
+                        BitmapHelperBytes.HandleNumbits(ONE_BYTE_LENGTH, jumpdests, ref rjumpdest);
+                        BitmapHelperBytes.HandleNumbits(TWO_BYTE_LENGTH, codeBitmap, ref postInstructionByte);
                     }
-                    BitmapHelperSpan.HandleNumbits(immediateValueSize, ref codeBitmap, ref postInstructionByte);
+
+                    if (opcode is Instruction.RJUMPV)
+                    {
+                        if (postInstructionByte + TWO_BYTE_LENGTH > code.Length)
+                        {
+                            return false;
+                        }
+
+                        byte count = code[postInstructionByte];
+                        if (count < MINIMUMS_ACCEPTABLE_JUMPT_JUMPTABLE_LENGTH)
+                        {
+                            return false;
+                        }
+
+                        if (postInstructionByte + ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH > code.Length)
+                        {
+                            return false;
+                        }
+
+                        var immediateValueSize = ONE_BYTE_LENGTH + count * TWO_BYTE_LENGTH;
+                        for (int j = 0; j < count; j++)
+                        {
+                            var offset = code.Slice(postInstructionByte + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthInt16();
+                            var rjumpdest = offset + immediateValueSize + postInstructionByte;
+                            if (rjumpdest < 0 || rjumpdest >= code.Length)
+                            {
+                                return false;
+                            }
+                            BitmapHelperBytes.HandleNumbits(ONE_BYTE_LENGTH, jumpdests, ref rjumpdest);
+                        }
+                        BitmapHelperBytes.HandleNumbits(immediateValueSize, codeBitmap, ref postInstructionByte);
+                    }
+
+                    if (opcode is Instruction.CALLF)
+                    {
+                        if (postInstructionByte + TWO_BYTE_LENGTH > code.Length)
+                        {
+                            return false;
+                        }
+
+                        ushort targetSectionId = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthUInt16();
+                        BitmapHelperBytes.HandleNumbits(TWO_BYTE_LENGTH, codeBitmap, ref postInstructionByte);
+
+                        if (targetSectionId >= header.CodeSections.Length)
+                        {
+                            return false;
+                        }
+                    }
+
+                    if (opcode is >= Instruction.PUSH0 and <= Instruction.PUSH32)
+                    {
+                        int len = opcode - Instruction.PUSH0;
+                        if (postInstructionByte + len > code.Length)
+                        {
+                            return false;
+                        }
+                        BitmapHelperBytes.HandleNumbits(len, codeBitmap, ref postInstructionByte);
+                    }
+                    pos = postInstructionByte;
                 }
 
-                if (opcode is Instruction.CALLF)
-                {
-                    if (postInstructionByte + TWO_BYTE_LENGTH > code.Length)
-                    {
-                        return false;
-                    }
-
-                    ushort targetSectionId = code.Slice(postInstructionByte, TWO_BYTE_LENGTH).ReadEthUInt16();
-                    BitmapHelperSpan.HandleNumbits(TWO_BYTE_LENGTH, ref codeBitmap, ref postInstructionByte);
-
-                    if (targetSectionId >= header.CodeSections.Length)
-                    {
-                        return false;
-                    }
-                }
-
-                if (opcode is >= Instruction.PUSH1 and <= Instruction.PUSH32)
-                {
-                    int len = opcode - Instruction.PUSH1 + 1;
-                    if (postInstructionByte + len > code.Length)
-                    {
-                        return false;
-                    }
-                    BitmapHelperSpan.HandleNumbits(len, ref codeBitmap, ref postInstructionByte);
-                }
-                pos = postInstructionByte;
-            }
-
-            if (pos > code.Length)
-            {
-                return false;
-            }
-
-            foreach (int jumpdest in jumpdests)
-            {
-                if (!BitmapHelperSpan.IsCodeSegment(ref codeBitmap, jumpdest))
+                if (pos > code.Length)
                 {
                     return false;
                 }
+
+                bool result = !BitmapHelperBytes.CheckCollision(codeBitmap, jumpdests);
+                return result;
             }
-            return true;
+            finally
+            {
+                pool.Return(codeBitmap);
+                pool.Return(jumpdests);
+            }
         }
         public bool ValidateReachableCode(int sectionId, in ReadOnlySpan<byte> code, Dictionary<int, int>.KeyCollection reachedOpcode, in EofHeader? header)
         {
