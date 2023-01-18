@@ -1,13 +1,9 @@
 // SPDX-FileCopyrightText: 2022 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Nethermind.Evm;
 
-public static class EofTestsBase 
+public static class EofTestsBase
 {
     [Flags]
     public enum Scenario
@@ -30,20 +26,31 @@ public static class EofTestsBase
                 new byte[] {
                     (byte)Instruction.PUSH1,
                     0x01,
+                    (byte)Instruction.POP,
                 },
                 new byte[] {
                     (byte)Instruction.PUSH8,
-                    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
+                    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                    (byte)Instruction.POP,
+                    (byte)Instruction.POP,
+                    (byte)Instruction.POP,
+                    (byte)Instruction.POP,
+                    (byte)Instruction.POP,
+                    (byte)Instruction.POP,
+                    (byte)Instruction.POP,
+                    (byte)Instruction.POP,
                 },
                 new byte[] {
                     (byte)Instruction.RJUMP,
                     0x00,0x00,
                 },
                 new byte[] {
+                    (byte)Instruction.PUSH0,
                     (byte)Instruction.RJUMPI,
                     0x00,0x00
                 },
                 new byte[] {
+                    (byte)Instruction.PUSH0,
                     (byte)Instruction.RJUMPV,
                     0x02,
                     0x00, 0x00,
@@ -52,12 +59,13 @@ public static class EofTestsBase
             };
             List<byte> bytecode = new();
             int j = 0;
-            for(int i = 0; i < 1000; j++) {
+            for (int i = 0; i < 1000; j++)
+            {
                 int segment = i % codeSegments.Length;
                 bytecode.AddRange(codeSegments[segment]);
                 i += codeSegments[segment].Length;
             }
-            
+
             if (scenario.HasFlag(Scenario.Invalid))
             {
                 bytecode.Add((byte)Instruction.RJUMP);
@@ -133,7 +141,7 @@ public static class EofTestsBase
                 (byte[], int) InjectCodeSectionHeader((byte[], int) containerState)
                 {
                     (byte[] container, int i) = (containerState);
-                    byte[] functionsCount =  functions.Length.ToByteArray();
+                    byte[] functionsCount = functions.Length.ToByteArray();
 
                     container[i++] = 0x02;
                     container[i++] = functionsCount[^2];
@@ -151,7 +159,7 @@ public static class EofTestsBase
                 (byte[], int) InjectdataSectionHeader((byte[], int) containerState)
                 {
                     (byte[] container, int i) = (containerState);
-                    byte[] dataSectionCount =  data.Length.ToByteArray();
+                    byte[] dataSectionCount = data.Length.ToByteArray();
 
                     container[i++] = 0x03;
                     container[i++] = dataSectionCount[^2];
@@ -182,7 +190,7 @@ public static class EofTestsBase
                     var (container, i) = (containerState);
                     foreach (var functionDef in functions)
                     {
-                        var MaxStackHeightBytes = 2.ToByteArray();
+                        var MaxStackHeightBytes = 1.ToByteArray();
                         container[i++] = (byte)0;
                         container[i++] = (byte)0;
                         container[i++] = MaxStackHeightBytes[^2];
