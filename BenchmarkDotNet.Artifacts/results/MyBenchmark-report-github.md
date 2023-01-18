@@ -8,13 +8,13 @@ Intel Core i5-8265U CPU 1.60GHz (Whiskey Lake), 1 CPU, 8 logical and 4 physical 
 
 
 ```
-|                             Method |      Mean |    Error |   StdDev |    Gen0 | Allocated |
-|----------------------------------- |----------:|---------:|---------:|--------:|----------:|
-|      Parallel_Stack_Valid_Bytecode | 231.06 μs | 3.473 μs | 3.249 μs | 66.1621 | 172.84 KB |
-|    Parallel_Stack_Invalid_Bytecode | 226.25 μs | 3.461 μs | 3.237 μs | 57.1289 | 153.74 KB |
-|     Parallel_Pooled_Valid_Bytecode | 155.19 μs | 1.593 μs | 1.412 μs | 37.8418 |  94.04 KB |
-|   Parallel_Pooled_Invalid_Bytecode | 150.54 μs | 1.417 μs | 1.256 μs | 37.3535 |  91.59 KB |
-|    Sequential_Stack_Valid_Bytecode |  55.81 μs | 0.768 μs | 0.718 μs |  7.8735 |  24.12 KB |
-|  Sequential_Stack_Invalid_Bytecode |  55.79 μs | 0.682 μs | 0.533 μs |  7.8735 |  24.12 KB |
-|   Sequential_Pooled_Valid_Bytecode |  38.55 μs | 0.747 μs | 0.734 μs |  5.2490 |  16.09 KB |
-| Sequential_Pooled_Invalid_Bytecode |  37.99 μs | 0.489 μs | 0.408 μs |  5.2490 |  16.09 KB |
+|                             Method |       Mean |    Error |    StdDev |     Median |    Gen0 | Allocated |
+|----------------------------------- |-----------:|---------:|----------:|-----------:|--------:|----------:|
+|      Parallel_Stack_Valid_Bytecode |   861.0 μs | 16.86 μs |  14.95 μs |   862.0 μs | 80.0781 |  250639 B |
+|    Parallel_Stack_Invalid_Bytecode |   414.0 μs |  8.15 μs |  17.89 μs |   415.6 μs | 41.5039 |  129813 B |
+|     Parallel_Pooled_Valid_Bytecode |   426.3 μs |  8.39 μs |  17.14 μs |   429.4 μs |  0.9766 |    3392 B |
+|   Parallel_Pooled_Invalid_Bytecode |   207.4 μs |  4.01 μs |   6.37 μs |   206.5 μs |  0.9766 |    3406 B |
+|    Sequential_Stack_Valid_Bytecode | 1,916.3 μs | 53.19 μs | 147.40 μs | 1,946.3 μs | 78.1250 |  246906 B |
+|  Sequential_Stack_Invalid_Bytecode | 1,080.2 μs | 22.78 μs |  63.88 μs | 1,078.9 μs | 41.0156 |  131694 B |
+|   Sequential_Pooled_Valid_Bytecode | 1,008.8 μs | 20.10 μs |  51.16 μs | 1,006.6 μs |       - |     301 B |
+| Sequential_Pooled_Invalid_Bytecode |   530.1 μs | 15.38 μs |  43.88 μs |   542.4 μs |       - |     299 B |

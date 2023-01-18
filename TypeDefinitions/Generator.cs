@@ -32,13 +32,6 @@ public static class EofTestsBase
                     (byte)Instruction.PUSH8,
                     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                     (byte)Instruction.POP,
-                    (byte)Instruction.POP,
-                    (byte)Instruction.POP,
-                    (byte)Instruction.POP,
-                    (byte)Instruction.POP,
-                    (byte)Instruction.POP,
-                    (byte)Instruction.POP,
-                    (byte)Instruction.POP,
                 },
                 new byte[] {
                     (byte)Instruction.RJUMP,
@@ -53,17 +46,17 @@ public static class EofTestsBase
                     (byte)Instruction.PUSH0,
                     (byte)Instruction.RJUMPV,
                     0x02,
-                    0x00, 0x00,
-                    0x00, 0x10
+                    0x00, 0x01,
+                    0x00, 0x02,
+                    (byte)Instruction.NOP,
+                    (byte)Instruction.NOP,
                 }
             };
             List<byte> bytecode = new();
-            int j = 0;
-            for (int i = 0; i < 1000; j++)
+            for (int i = 0; i < 500; i++)
             {
                 int segment = i % codeSegments.Length;
                 bytecode.AddRange(codeSegments[segment]);
-                i += codeSegments[segment].Length;
             }
 
             if (scenario.HasFlag(Scenario.Invalid))

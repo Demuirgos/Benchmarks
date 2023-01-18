@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
-using System;
 using System.Diagnostics.CodeAnalysis;
 using Nethermind.Evm.EOF;
 
@@ -184,8 +183,8 @@ namespace Nethermind.Evm
         public static int GetImmediateCount(this Instruction instruction, bool IsEofContext, byte jumpvCount = 0)
             => instruction switch
             {
-                Instruction.RJUMP or Instruction.RJUMPI => IsEofContext ? EvmObjectFormatSS.Eof1.TWO_BYTE_LENGTH : 0,
-                Instruction.RJUMPV => IsEofContext ? jumpvCount * EvmObjectFormatSS.Eof1.TWO_BYTE_LENGTH + EvmObjectFormatSS.Eof1.ONE_BYTE_LENGTH : 0,
+                Instruction.RJUMP or Instruction.RJUMPI => IsEofContext ? EvmObjectFormatPSOpt.Eof1.TWO_BYTE_LENGTH : 0,
+                Instruction.RJUMPV => IsEofContext ? jumpvCount * EvmObjectFormatPSOpt.Eof1.TWO_BYTE_LENGTH + EvmObjectFormatPSOpt.Eof1.ONE_BYTE_LENGTH : 0,
                 >= Instruction.PUSH0 and <= Instruction.PUSH32 => instruction - Instruction.PUSH0,
                 _ => 0
             };

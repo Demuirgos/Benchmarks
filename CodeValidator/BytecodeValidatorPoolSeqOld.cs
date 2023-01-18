@@ -1,18 +1,15 @@
-using System;
+using Microsoft.Diagnostics.Runtime;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace Nethermind.Evm.EOF;
 
-internal static class EvmObjectFormatPP
+internal static class EvmObjectFormatPSOld
 {
     private interface IEofVersionHandler
     {
-        bool ValidateBody(ReadOnlyMemory<byte> code, EofHeader header);
+        bool ValidateBody(ReadOnlySpan<byte> code, EofHeader header);
         bool TryParseEofHeader(ReadOnlySpan<byte> code, [NotNullWhen(true)] out EofHeader? header);
     }
 
@@ -23,7 +20,7 @@ internal static class EvmObjectFormatPP
     private const byte VERSION_OFFSET = TWO_BYTE_LENGTH; // magic lenght
 
     private static readonly Dictionary<byte, IEofVersionHandler> _eofVersionHandlers = new();
-    static EvmObjectFormatPP()
+    static EvmObjectFormatPSOld()
     {
         _eofVersionHandlers.Add(Eof1.VERSION, new Eof1());
     }
@@ -35,12 +32,11 @@ internal static class EvmObjectFormatPP
     /// <returns></returns>
     public static bool IsEof(ReadOnlySpan<byte> container) => container.StartsWith(MAGIC);
 
-    public static bool IsValidEof(ReadOnlyMemory<byte> container, out EofHeader? header)
+    public static bool IsValidEof(ReadOnlySpan<byte> container, out EofHeader? header)
     {
-        ReadOnlySpan<byte> containerAsSpan = container.Span;
         if (container.Length >= VERSION_OFFSET
-            && _eofVersionHandlers.TryGetValue(containerAsSpan[VERSION_OFFSET], out IEofVersionHandler handler)
-            && handler.TryParseEofHeader(containerAsSpan, out header))
+            && _eofVersionHandlers.TryGetValue(container[VERSION_OFFSET], out IEofVersionHandler handler)
+            && handler.TryParseEofHeader(container, out header))
         {
             EofHeader h = header.Value;
             if (handler.ValidateBody(container, h))
@@ -79,15 +75,15 @@ internal static class EvmObjectFormatPP
         internal const byte MINIMUM_TYPESECTION_SIZE = 4;
         internal const byte MINIMUM_CODESECTION_SIZE = 1;
 
-        internal const byte KIND_TYPE_OFFSET = VERSION_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH; // version length
-        internal const byte TYPE_SIZE_OFFSET = KIND_TYPE_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH; // kind type length
-        internal const byte KIND_CODE_OFFSET = TYPE_SIZE_OFFSET + EvmObjectFormatPP.TWO_BYTE_LENGTH; // type size length
-        internal const byte NUM_CODE_SECTIONS_OFFSET = KIND_CODE_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH; // kind code length
-        internal const byte CODESIZE_OFFSET = NUM_CODE_SECTIONS_OFFSET + EvmObjectFormatPP.TWO_BYTE_LENGTH; // num code sections length
+        internal const byte KIND_TYPE_OFFSET = VERSION_OFFSET + EvmObjectFormatPSOld.ONE_BYTE_LENGTH; // version length
+        internal const byte TYPE_SIZE_OFFSET = KIND_TYPE_OFFSET + EvmObjectFormatPSOld.ONE_BYTE_LENGTH; // kind type length
+        internal const byte KIND_CODE_OFFSET = TYPE_SIZE_OFFSET + EvmObjectFormatPSOld.TWO_BYTE_LENGTH; // type size length
+        internal const byte NUM_CODE_SECTIONS_OFFSET = KIND_CODE_OFFSET + EvmObjectFormatPSOld.ONE_BYTE_LENGTH; // kind code length
+        internal const byte CODESIZE_OFFSET = NUM_CODE_SECTIONS_OFFSET + EvmObjectFormatPSOld.TWO_BYTE_LENGTH; // num code sections length
         internal const byte KIND_DATA_OFFSET = CODESIZE_OFFSET + DYNAMIC_OFFSET; // all code size length
-        internal const byte DATA_SIZE_OFFSET = KIND_DATA_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // kind data length + all code size length
-        internal const byte TERMINATOR_OFFSET = DATA_SIZE_OFFSET + EvmObjectFormatPP.TWO_BYTE_LENGTH + DYNAMIC_OFFSET; // data size length + all code size length
-        internal const byte HEADER_END_OFFSET = TERMINATOR_OFFSET + EvmObjectFormatPP.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // terminator length + all code size length
+        internal const byte DATA_SIZE_OFFSET = KIND_DATA_OFFSET + EvmObjectFormatPSOld.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // kind data length + all code size length
+        internal const byte TERMINATOR_OFFSET = DATA_SIZE_OFFSET + EvmObjectFormatPSOld.TWO_BYTE_LENGTH + DYNAMIC_OFFSET; // data size length + all code size length
+        internal const byte HEADER_END_OFFSET = TERMINATOR_OFFSET + EvmObjectFormatPSOld.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // terminator length + all code size length
         internal const byte DYNAMIC_OFFSET = 0; // to mark dynamic offset needs to be added
         internal const byte TWO_BYTE_LENGTH = 2;// indicates the number of bytes to skip for immediates
         internal const byte ONE_BYTE_LENGTH = 1; // indicates the length of the count immediate of jumpv
@@ -110,14 +106,14 @@ internal static class EvmObjectFormatPP
         internal const ushort RETURN_STACK_MAX_HEIGHT = MAXIMUM_NUM_CODE_SECTIONS; // the size in the type sectionn allocated to each function section
 
         internal const ushort MINIMUM_SIZE = HEADER_END_OFFSET
-                                            + EvmObjectFormatPP.TWO_BYTE_LENGTH // one code size
+                                            + EvmObjectFormatPSOld.TWO_BYTE_LENGTH // one code size
                                             + MINIMUM_TYPESECTION_SIZE // minimum type section body size
                                             + MINIMUM_CODESECTION_SIZE; // minimum code section body size;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int CalculateHeaderSize(int codeSections) =>
-            HEADER_END_OFFSET + codeSections * EvmObjectFormatPP.TWO_BYTE_LENGTH;
+            HEADER_END_OFFSET + codeSections * EvmObjectFormatPSOld.TWO_BYTE_LENGTH;
 
         public bool TryParseEofHeader(ReadOnlySpan<byte> container, out EofHeader? header)
         {
@@ -176,7 +172,7 @@ internal static class EvmObjectFormatPP
                 return false;
             }
 
-            int codeSizeLenght = numberOfCodeSections * EvmObjectFormatPP.TWO_BYTE_LENGTH;
+            int codeSizeLenght = numberOfCodeSections * EvmObjectFormatPSOld.TWO_BYTE_LENGTH;
             int dynamicOffset = codeSizeLenght;
 
             // we need to be able to parse header + all code sizes
@@ -194,7 +190,7 @@ internal static class EvmObjectFormatPP
             SectionHeader[] codeSections = new SectionHeader[numberOfCodeSections];
             for (ushort pos = 0; pos < numberOfCodeSections; pos++)
             {
-                int currentCodeSizeOffset = CODESIZE_OFFSET + pos * EvmObjectFormatPP.TWO_BYTE_LENGTH; // offset of pos'th code size
+                int currentCodeSizeOffset = CODESIZE_OFFSET + pos * EvmObjectFormatPSOld.TWO_BYTE_LENGTH; // offset of pos'th code size
                 SectionHeader codeSection = new()
                 {
                     Start = typeSection.EndOffset + codeSectionsSizeUpToNow,
@@ -240,14 +236,14 @@ internal static class EvmObjectFormatPP
             return true;
         }
 
-        public bool ValidateBody(ReadOnlyMemory<byte> container, EofHeader header)
+        public bool ValidateBody(ReadOnlySpan<byte> container, EofHeader header)
         {
             int startOffset = CalculateHeaderSize(header.CodeSections.Length);
             int calculatedCodeLength = header.TypeSection.Size
                 + header.CodeSectionsSize
                 + header.DataSection.Size;
             SectionHeader[]? codeSections = header.CodeSections;
-            ReadOnlySpan<byte> contractBody = container.Span[startOffset..];
+            ReadOnlySpan<byte> contractBody = container[startOffset..];
             (int typeSectionStart, ushort typeSectionSize) = header.TypeSection;
 
 
@@ -266,28 +262,29 @@ internal static class EvmObjectFormatPP
                 return false;
             }
 
-            ReadOnlyMemory<byte> typesection = container.Slice(typeSectionStart, typeSectionSize);
-            if (!ValidateTypeSection(typesection.Span))
+            ReadOnlySpan<byte> typesection = container.Slice(typeSectionStart, typeSectionSize);
+            if (!ValidateTypeSection(typesection))
             {
                 return false;
             }
 
-            bool validSections = true;
-            Parallel.For(0, header.CodeSections.Length, (sectionIdx, state) =>
+            for (int sectionIdx = 0; sectionIdx < header.CodeSections.Length; sectionIdx++)
             {
                 SectionHeader sectionHeader = header.CodeSections[sectionIdx];
                 (int codeSectionStartOffset, int codeSectionSize) = sectionHeader;
-                ReadOnlySpan<byte> code = container.Span.Slice(codeSectionStartOffset, codeSectionSize);
-                if (!ValidateInstructions(code, header) ||
-                    !ValidateStackState(sectionIdx, code, typesection.Span, header))
+                ReadOnlySpan<byte> code = container.Slice(codeSectionStartOffset, codeSectionSize);
+                if (!ValidateInstructions(code, header))
                 {
-                    state.Stop();
-                    validSections = false;
-                    return;
+                    return false;
                 }
-            });
 
-            return validSections;
+                if (!ValidateStackState(sectionIdx, code, typesection, header))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         bool ValidateTypeSection(ReadOnlySpan<byte> types)
@@ -471,9 +468,9 @@ internal static class EvmObjectFormatPP
         public bool ValidateStackState(int sectionId, in ReadOnlySpan<byte> code, in ReadOnlySpan<byte> typesection, in EofHeader? header)
         {
             Dictionary<int, int> recordedStackHeight = new();
-            int peakStackHeight = typesection[sectionId * MINIMUM_TYPESECTION_SIZE];
             ushort suggestedMaxHeight = typesection.Slice(sectionId * MINIMUM_TYPESECTION_SIZE + TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthUInt16();
 
+            int peakStackHeight = typesection[sectionId * 4];
             Stack<(int Position, int StackHeigth)> workSet = new();
             workSet.Push((0, peakStackHeight));
 

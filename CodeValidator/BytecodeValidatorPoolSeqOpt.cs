@@ -1,14 +1,11 @@
-using System;
+using Microsoft.Diagnostics.Runtime;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace Nethermind.Evm.EOF;
 
-internal static class EvmObjectFormatPS
+internal static class EvmObjectFormatPSOpt
 {
     private interface IEofVersionHandler
     {
@@ -23,7 +20,7 @@ internal static class EvmObjectFormatPS
     private const byte VERSION_OFFSET = TWO_BYTE_LENGTH; // magic lenght
 
     private static readonly Dictionary<byte, IEofVersionHandler> _eofVersionHandlers = new();
-    static EvmObjectFormatPS()
+    static EvmObjectFormatPSOpt()
     {
         _eofVersionHandlers.Add(Eof1.VERSION, new Eof1());
     }
@@ -78,15 +75,15 @@ internal static class EvmObjectFormatPS
         internal const byte MINIMUM_TYPESECTION_SIZE = 4;
         internal const byte MINIMUM_CODESECTION_SIZE = 1;
 
-        internal const byte KIND_TYPE_OFFSET = VERSION_OFFSET + EvmObjectFormatPS.ONE_BYTE_LENGTH; // version length
-        internal const byte TYPE_SIZE_OFFSET = KIND_TYPE_OFFSET + EvmObjectFormatPS.ONE_BYTE_LENGTH; // kind type length
-        internal const byte KIND_CODE_OFFSET = TYPE_SIZE_OFFSET + EvmObjectFormatPS.TWO_BYTE_LENGTH; // type size length
-        internal const byte NUM_CODE_SECTIONS_OFFSET = KIND_CODE_OFFSET + EvmObjectFormatPS.ONE_BYTE_LENGTH; // kind code length
-        internal const byte CODESIZE_OFFSET = NUM_CODE_SECTIONS_OFFSET + EvmObjectFormatPS.TWO_BYTE_LENGTH; // num code sections length
+        internal const byte KIND_TYPE_OFFSET = VERSION_OFFSET + EvmObjectFormatPSOpt.ONE_BYTE_LENGTH; // version length
+        internal const byte TYPE_SIZE_OFFSET = KIND_TYPE_OFFSET + EvmObjectFormatPSOpt.ONE_BYTE_LENGTH; // kind type length
+        internal const byte KIND_CODE_OFFSET = TYPE_SIZE_OFFSET + EvmObjectFormatPSOpt.TWO_BYTE_LENGTH; // type size length
+        internal const byte NUM_CODE_SECTIONS_OFFSET = KIND_CODE_OFFSET + EvmObjectFormatPSOpt.ONE_BYTE_LENGTH; // kind code length
+        internal const byte CODESIZE_OFFSET = NUM_CODE_SECTIONS_OFFSET + EvmObjectFormatPSOpt.TWO_BYTE_LENGTH; // num code sections length
         internal const byte KIND_DATA_OFFSET = CODESIZE_OFFSET + DYNAMIC_OFFSET; // all code size length
-        internal const byte DATA_SIZE_OFFSET = KIND_DATA_OFFSET + EvmObjectFormatPS.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // kind data length + all code size length
-        internal const byte TERMINATOR_OFFSET = DATA_SIZE_OFFSET + EvmObjectFormatPS.TWO_BYTE_LENGTH + DYNAMIC_OFFSET; // data size length + all code size length
-        internal const byte HEADER_END_OFFSET = TERMINATOR_OFFSET + EvmObjectFormatPS.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // terminator length + all code size length
+        internal const byte DATA_SIZE_OFFSET = KIND_DATA_OFFSET + EvmObjectFormatPSOpt.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // kind data length + all code size length
+        internal const byte TERMINATOR_OFFSET = DATA_SIZE_OFFSET + EvmObjectFormatPSOpt.TWO_BYTE_LENGTH + DYNAMIC_OFFSET; // data size length + all code size length
+        internal const byte HEADER_END_OFFSET = TERMINATOR_OFFSET + EvmObjectFormatPSOpt.ONE_BYTE_LENGTH + DYNAMIC_OFFSET; // terminator length + all code size length
         internal const byte DYNAMIC_OFFSET = 0; // to mark dynamic offset needs to be added
         internal const byte TWO_BYTE_LENGTH = 2;// indicates the number of bytes to skip for immediates
         internal const byte ONE_BYTE_LENGTH = 1; // indicates the length of the count immediate of jumpv
@@ -109,14 +106,14 @@ internal static class EvmObjectFormatPS
         internal const ushort RETURN_STACK_MAX_HEIGHT = MAXIMUM_NUM_CODE_SECTIONS; // the size in the type sectionn allocated to each function section
 
         internal const ushort MINIMUM_SIZE = HEADER_END_OFFSET
-                                            + EvmObjectFormatPS.TWO_BYTE_LENGTH // one code size
+                                            + EvmObjectFormatPSOpt.TWO_BYTE_LENGTH // one code size
                                             + MINIMUM_TYPESECTION_SIZE // minimum type section body size
                                             + MINIMUM_CODESECTION_SIZE; // minimum code section body size;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int CalculateHeaderSize(int codeSections) =>
-            HEADER_END_OFFSET + codeSections * EvmObjectFormatPS.TWO_BYTE_LENGTH;
+            HEADER_END_OFFSET + codeSections * EvmObjectFormatPSOpt.TWO_BYTE_LENGTH;
 
         public bool TryParseEofHeader(ReadOnlySpan<byte> container, out EofHeader? header)
         {
@@ -175,7 +172,7 @@ internal static class EvmObjectFormatPS
                 return false;
             }
 
-            int codeSizeLenght = numberOfCodeSections * EvmObjectFormatPS.TWO_BYTE_LENGTH;
+            int codeSizeLenght = numberOfCodeSections * EvmObjectFormatPSOpt.TWO_BYTE_LENGTH;
             int dynamicOffset = codeSizeLenght;
 
             // we need to be able to parse header + all code sizes
@@ -193,7 +190,7 @@ internal static class EvmObjectFormatPS
             SectionHeader[] codeSections = new SectionHeader[numberOfCodeSections];
             for (ushort pos = 0; pos < numberOfCodeSections; pos++)
             {
-                int currentCodeSizeOffset = CODESIZE_OFFSET + pos * EvmObjectFormatPS.TWO_BYTE_LENGTH; // offset of pos'th code size
+                int currentCodeSizeOffset = CODESIZE_OFFSET + pos * EvmObjectFormatPSOpt.TWO_BYTE_LENGTH; // offset of pos'th code size
                 SectionHeader codeSection = new()
                 {
                     Start = typeSection.EndOffset + codeSectionsSizeUpToNow,
@@ -276,12 +273,12 @@ internal static class EvmObjectFormatPS
                 SectionHeader sectionHeader = header.CodeSections[sectionIdx];
                 (int codeSectionStartOffset, int codeSectionSize) = sectionHeader;
                 ReadOnlySpan<byte> code = container.Slice(codeSectionStartOffset, codeSectionSize);
-                if (!ValidateInstructions(code, header))
+                if (!ValidateInstructions(code, header, out ushort jumpsCount))
                 {
                     return false;
                 }
 
-                if (!ValidateStackState(sectionIdx, code, typesection, header))
+                if (!ValidateStackState(sectionIdx, code, typesection, jumpsCount))
                 {
                     return false;
                 }
@@ -325,11 +322,11 @@ internal static class EvmObjectFormatPS
             }
             return true;
         }
-        bool ValidateInstructions(ReadOnlySpan<byte> code, in EofHeader header)
+        bool ValidateInstructions(ReadOnlySpan<byte> code, in EofHeader header, out ushort jumpsCount)
         {
-            ArrayPool<byte> pool = ArrayPool<byte>.Shared;
-            byte[] codeBitmap = pool.Rent((code.Length / BYTE_BIT_COUNT) + 1);
-            byte[] jumpdests = pool.Rent((code.Length / BYTE_BIT_COUNT) + 1);
+            byte[] codeBitmap = ArrayPool<byte>.Shared.Rent((code.Length / BYTE_BIT_COUNT) + 1);
+            byte[] jumpdests = ArrayPool<byte>.Shared.Rent((code.Length / BYTE_BIT_COUNT) + 1);
+            jumpsCount = 1;
             try
             {
                 int pos;
@@ -359,6 +356,7 @@ internal static class EvmObjectFormatPS
                             return false;
                         }
 
+                        jumpsCount += opcode is Instruction.RJUMP ? ONE_BYTE_LENGTH : TWO_BYTE_LENGTH;
                         BitmapHelperBytes.HandleNumbits(ONE_BYTE_LENGTH, jumpdests, ref rjumpdest);
                         BitmapHelperBytes.HandleNumbits(TWO_BYTE_LENGTH, codeBitmap, ref postInstructionByte);
                     }
@@ -371,6 +369,7 @@ internal static class EvmObjectFormatPS
                         }
 
                         byte count = code[postInstructionByte];
+                        jumpsCount += count;
                         if (count < MINIMUMS_ACCEPTABLE_JUMPT_JUMPTABLE_LENGTH)
                         {
                             return false;
@@ -433,17 +432,17 @@ internal static class EvmObjectFormatPS
             }
             finally
             {
-                pool.Return(codeBitmap);
-                pool.Return(jumpdests);
+                ArrayPool<byte>.Shared.Return(codeBitmap, true);
+                ArrayPool<byte>.Shared.Return(jumpdests, true);
             }
         }
-        public bool ValidateReachableCode(int sectionId, in ReadOnlySpan<byte> code, Dictionary<int, int>.KeyCollection reachedOpcode, in EofHeader? header)
+        public bool ValidateReachableCode(in ReadOnlySpan<byte> code, short[] reachedOpcode)
         {
             for (int i = 0; i < code.Length;)
             {
                 var opcode = (Instruction)code[i];
 
-                if (!reachedOpcode.Contains(i))
+                if (reachedOpcode[i] == 0)
                 {
                     return false;
                 }
@@ -468,123 +467,137 @@ internal static class EvmObjectFormatPS
             return true;
         }
 
-        public bool ValidateStackState(int sectionId, in ReadOnlySpan<byte> code, in ReadOnlySpan<byte> typesection, in EofHeader? header)
+        public bool ValidateStackState(int sectionId, in ReadOnlySpan<byte> code, in ReadOnlySpan<byte> typesection, ushort worksetCount)
         {
-            Dictionary<int, int> recordedStackHeight = new();
-            int peakStackHeight = typesection[sectionId * MINIMUM_TYPESECTION_SIZE];
+
+            short[] recordedStackHeight = ArrayPool<short>.Shared.Rent(code.Length);
             ushort suggestedMaxHeight = typesection.Slice(sectionId * MINIMUM_TYPESECTION_SIZE + TWO_BYTE_LENGTH, TWO_BYTE_LENGTH).ReadEthUInt16();
+            int peakStackHeight = typesection[sectionId * 4];;
 
-            Stack<(int Position, int StackHeigth)> workSet = new();
-            workSet.Push((0, peakStackHeight));
-
-            while (workSet.TryPop(out var worklet))
+            ushort worksetPointer = 0;
+            ushort worksetTop = 1;
+            int[] workset = ArrayPool<int>.Shared.Rent(worksetCount + 1);
+            (int, int) PopWorklet()
             {
-                (int pos, int stackHeight) = worklet;
-                bool stop = false;
+                int worklet = workset[worksetPointer++];
+                return (worklet >> 16, (short)worklet);
+            }
+            void PushWorklet(ushort dest, ushort height) => workset[worksetTop++] = (dest << 16) + height;
 
-                while (!stop)
+            try {
+                PushWorklet(0, (ushort)peakStackHeight);
+                while (worksetPointer < worksetTop)
                 {
-                    Instruction opcode = (Instruction)code[pos];
-                    (int inputs, int outputs, int immediates) = opcode.StackRequirements();
-                    int posPostInstruction = pos + 1;
-                    if (recordedStackHeight.ContainsKey(pos))
+                    (int pos, int stackHeight) = PopWorklet();
+                    bool stop = false;
+
+                    while (!stop)
                     {
-                        if (stackHeight != recordedStackHeight[pos])
+                        Instruction opcode = (Instruction)code[pos];
+                        (int inputs, int outputs, int immediates) = opcode.StackRequirements();
+                        int posPostInstruction = pos + 1;
+                        if (recordedStackHeight[pos] != 0)
+                        {
+                            if (stackHeight != recordedStackHeight[pos] - 1)
+                            {
+                                return false;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            recordedStackHeight[pos] = (short)(stackHeight + 1);
+                        }
+
+                        if (opcode is Instruction.CALLF)
+                        {
+                            var sectionIndex = code.Slice(posPostInstruction, TWO_BYTE_LENGTH).ReadEthUInt16();
+                            inputs = typesection[sectionIndex * MINIMUM_TYPESECTION_SIZE + INPUTS_OFFSET];
+                            outputs = typesection[sectionIndex * MINIMUM_TYPESECTION_SIZE + OUTPUTS_OFFSET];
+                        }
+
+                        if (stackHeight < inputs)
                         {
                             return false;
                         }
-                        break;
-                    }
-                    else
-                    {
-                        recordedStackHeight[pos] = stackHeight;
-                    }
 
-                    if (opcode is Instruction.CALLF)
-                    {
-                        var sectionIndex = code.Slice(posPostInstruction, TWO_BYTE_LENGTH).ReadEthUInt16();
-                        inputs = typesection[sectionIndex * MINIMUM_TYPESECTION_SIZE + INPUTS_OFFSET];
-                        outputs = typesection[sectionIndex * MINIMUM_TYPESECTION_SIZE + OUTPUTS_OFFSET];
-                    }
+                        stackHeight += outputs - inputs;
+                        peakStackHeight = Math.Max(peakStackHeight, stackHeight);
 
-                    if (stackHeight < inputs)
-                    {
-                        return false;
-                    }
-
-                    stackHeight += outputs - inputs;
-                    peakStackHeight = Math.Max(peakStackHeight, stackHeight);
-
-                    switch (opcode)
-                    {
-                        case Instruction.RJUMP:
-                            {
-                                var offset = code.Slice(posPostInstruction, TWO_BYTE_LENGTH).ReadEthInt16();
-                                var jumpDestination = posPostInstruction + immediates + offset;
-                                workSet.Push((jumpDestination, stackHeight));
-                                stop = true;
-                                break;
-                            }
-                        case Instruction.RJUMPI:
-                            {
-                                var offset = code.Slice(posPostInstruction, TWO_BYTE_LENGTH).ReadEthInt16();
-                                var jumpDestination = posPostInstruction + immediates + offset;
-                                workSet.Push((jumpDestination, stackHeight));
-                                posPostInstruction += immediates;
-                                break;
-                            }
-                        case Instruction.RJUMPV:
-                            {
-                                var count = code[posPostInstruction];
-                                immediates = count * TWO_BYTE_LENGTH + ONE_BYTE_LENGTH;
-                                for (short j = 0; j < count; j++)
+                        switch (opcode)
+                        {
+                            case Instruction.RJUMP:
                                 {
-                                    int case_v = posPostInstruction + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH;
-                                    int offset = code.Slice(case_v, TWO_BYTE_LENGTH).ReadEthInt16();
-                                    int jumptDestination = posPostInstruction + immediates + offset;
-                                    workSet.Push((jumptDestination, stackHeight));
+                                    short offset = code.Slice(posPostInstruction, TWO_BYTE_LENGTH).ReadEthInt16();
+                                    int jumpDestination = posPostInstruction + immediates + offset;
+                                    PushWorklet((ushort)jumpDestination, (ushort)stackHeight);
+                                    stop = true;
+                                    break;
                                 }
-                                posPostInstruction += immediates;
-                                break;
-                            }
-                        default:
+                            case Instruction.RJUMPI:
+                                {
+                                    var offset = code.Slice(posPostInstruction, TWO_BYTE_LENGTH).ReadEthInt16();
+                                    var jumpDestination = posPostInstruction + immediates + offset;
+                                    PushWorklet((ushort)jumpDestination, (ushort)stackHeight);
+                                    posPostInstruction += immediates;
+                                    break;
+                                }
+                            case Instruction.RJUMPV:
+                                {
+                                    var count = code[posPostInstruction];
+                                    immediates = count * TWO_BYTE_LENGTH + ONE_BYTE_LENGTH;
+                                    for (short j = 0; j < count; j++)
+                                    {
+                                        int case_v = posPostInstruction + ONE_BYTE_LENGTH + j * TWO_BYTE_LENGTH;
+                                        int offset = code.Slice(case_v, TWO_BYTE_LENGTH).ReadEthInt16();
+                                        int jumpDestination = posPostInstruction + immediates + offset;
+                                        PushWorklet((ushort)jumpDestination, (ushort)stackHeight);
+                                    }
+                                    posPostInstruction += immediates;
+                                    break;
+                                }
+                            default:
+                                {
+                                    posPostInstruction += immediates;
+                                    break;
+                                }
+                        }
+
+                        pos = posPostInstruction;
+                        if (stop) break;
+
+                        if (opcode.IsTerminating())
+                        {
+                            var expectedHeight = opcode is Instruction.RETF ? typesection[sectionId * MINIMUM_TYPESECTION_SIZE + OUTPUTS_OFFSET] : stackHeight;
+                            if (expectedHeight != stackHeight)
                             {
-                                posPostInstruction += immediates;
-                                break;
+                                return false;
                             }
-                    }
+                            break;
+                        }
 
-                    pos = posPostInstruction;
-                    if (stop) break;
-
-                    if (opcode.IsTerminating())
-                    {
-                        var expectedHeight = opcode is Instruction.RETF ? typesection[sectionId * MINIMUM_TYPESECTION_SIZE + OUTPUTS_OFFSET] : stackHeight;
-                        if (expectedHeight != stackHeight)
+                        else if (pos >= code.Length)
                         {
                             return false;
                         }
-                        break;
-                    }
-
-                    else if (pos >= code.Length)
-                    {
-                        return false;
                     }
                 }
-            }
 
-            if (!ValidateReachableCode(sectionId, code, recordedStackHeight.Keys, in header))
-            {
-                return false;
-            }
+                if (!ValidateReachableCode(code, recordedStackHeight))
+                {
+                    return false;
+                }
 
-            if (peakStackHeight != suggestedMaxHeight)
-            {
-                return false;
-            }
+                if (peakStackHeight != suggestedMaxHeight)
+                {
+                    return false;
+                }
 
-            return peakStackHeight <= MAX_STACK_HEIGHT;
+                return peakStackHeight <= MAX_STACK_HEIGHT;
+            } finally {
+                ArrayPool<short>.Shared.Return(recordedStackHeight, true);
+                ArrayPool<int>.Shared.Return(workset, true);
+            }
         }
     }
 }
