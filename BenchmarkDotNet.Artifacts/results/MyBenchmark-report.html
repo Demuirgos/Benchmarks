@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>MyBenchmark-20230122-170019</title>
+<title>MyBenchmark-20230122-180837</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -16,22 +16,23 @@
 BenchmarkDotNet=v0.13.3, OS=Windows 11 (10.0.22621.1105)
 Intel Core i5-8265U CPU 1.60GHz (Whiskey Lake), 1 CPU, 8 logical and 4 physical cores
 .NET SDK=7.0.100
-  [Host]     : .NET 7.0.0 (7.0.22.51805), X64 RyuJIT AVX2
-  DefaultJob : .NET 7.0.0 (7.0.22.51805), X64 RyuJIT AVX2
+  [Host] : .NET 7.0.0 (7.0.22.51805), X64 RyuJIT AVX2
 </code></pre>
-<pre><code></code></pre>
+<pre><code>Job=MediumRun  Toolchain=InProcessNoEmitToolchain  IterationCount=15  
+LaunchCount=2  WarmupCount=10  
+</code></pre>
 
 <table>
 <thead><tr><th>                                   Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>Sequential_Pooled_Valid_Bytecode_Old</td><td>3.204 ms</td><td>0.0311 ms</td><td>0.0291 ms</td><td>777.3438</td><td>2448838 B</td>
-</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_Old</td><td>1.661 ms</td><td>0.0151 ms</td><td>0.0133 ms</td><td>388.6719</td><td>1224567 B</td>
-</tr><tr><td>Sequential_Pooled_Valid_Bytecode_No_Bit_Manip</td><td>2.126 ms</td><td>0.0206 ms</td><td>0.0193 ms</td><td>-</td><td>351 B</td>
-</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_No_Bit_Manip</td><td>1.097 ms</td><td>0.0179 ms</td><td>0.0256 ms</td><td>-</td><td>323 B</td>
-</tr><tr><td>Sequential_Pooled_Valid_Bytecode_Struct</td><td>2.364 ms</td><td>0.0321 ms</td><td>0.0300 ms</td><td>-</td><td>351 B</td>
-</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_Struct</td><td>1.228 ms</td><td>0.0103 ms</td><td>0.0091 ms</td><td>-</td><td>323 B</td>
-</tr><tr><td>Sequential_Pooled_Valid_Bytecode_New</td><td>NA</td><td>NA</td><td>NA</td><td>-</td><td>-</td>
-</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_New</td><td>NA</td><td>NA</td><td>NA</td><td>-</td><td>-</td>
+</thead><tbody><tr><td>Sequential_Pooled_Valid_Bytecode_Old</td><td>4.988 ms</td><td>1.0679 ms</td><td>1.5653 ms</td><td>773.4375</td><td>2448844 B</td>
+</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_Old</td><td>1.727 ms</td><td>0.0991 ms</td><td>0.1324 ms</td><td>388.6719</td><td>1224567 B</td>
+</tr><tr><td>Sequential_Pooled_Valid_Bytecode_No_Bit_Manip</td><td>2.415 ms</td><td>0.2789 ms</td><td>0.4175 ms</td><td>-</td><td>351 B</td>
+</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_No_Bit_Manip</td><td>1.097 ms</td><td>0.0346 ms</td><td>0.0461 ms</td><td>-</td><td>324 B</td>
+</tr><tr><td>Sequential_Pooled_Valid_Bytecode_Struct</td><td>2.525 ms</td><td>0.1997 ms</td><td>0.2864 ms</td><td>-</td><td>352 B</td>
+</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_Struct</td><td>1.231 ms</td><td>0.0096 ms</td><td>0.0138 ms</td><td>-</td><td>303 B</td>
+</tr><tr><td>Sequential_Pooled_Valid_Bytecode_New</td><td>2.164 ms</td><td>0.0206 ms</td><td>0.0296 ms</td><td>-</td><td>312 B</td>
+</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_New</td><td>1.115 ms</td><td>0.0082 ms</td><td>0.0117 ms</td><td>-</td><td>304 B</td>
 </tr></tbody></table>
 </body>
 </html>

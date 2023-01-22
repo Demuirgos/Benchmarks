@@ -475,7 +475,7 @@ internal static class EvmObjectFormatPSOpt
             int peakStackHeight = typesection[sectionId * 4];;
 
             ushort worksetPointer = 0;
-            ushort worksetTop = 1;
+            ushort worksetTop = 0;
             int[] workset = ArrayPool<int>.Shared.Rent(worksetCount + 1);
             (int, int) PopWorklet()
             {

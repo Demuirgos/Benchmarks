@@ -4,7 +4,7 @@ using BenchmarkDotNet.Attributes;
 using Nethermind.Evm.EOF;
 using static EofTestsBase;
 
-[MemoryDiagnoser]
+[MemoryDiagnoser, Config(typeof(AntiVirusFriendlyConfig))]
 public class MyBenchmark
 {
     public byte[] InvalidBytecode = ScenarioCase.GenerateFormatScenarios(Scenario.Invalid);
