@@ -473,7 +473,7 @@ internal static class EvmObjectFormatPSDouble
             int peakStackHeight = typesection[sectionId * 4];
 
             ushort worksetPointer = 0;
-            ushort worksetTop = 2;
+            ushort worksetTop = 0;
             ushort[] workset = ArrayPool<ushort>.Shared.Rent((worksetCount + 1) * 2);
             static (int, int) PopWorklet(ushort[] workset, ref ushort worksetPointer)
             {
@@ -596,8 +596,8 @@ internal static class EvmObjectFormatPSDouble
 
                 return peakStackHeight <= MAX_STACK_HEIGHT;
             } finally {
-                ArrayPool<short>.Shared.Return(recordedStackHeight);
-                ArrayPool<ushort>.Shared.Return(workset);
+                ArrayPool<short>.Shared.Return(recordedStackHeight, true);
+                ArrayPool<ushort>.Shared.Return(workset, true);
             }
         }
     }
