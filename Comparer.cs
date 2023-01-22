@@ -25,6 +25,30 @@ public class MyBenchmark
     }
 
     [Benchmark]
+    public bool Sequential_Pooled_Valid_Bytecode_No_Bit_Manip()
+    {
+        return EvmObjectFormatPSDouble.IsValidEof(ValidBytecode, out _);
+    }
+
+    [Benchmark]
+    public bool Sequential_Pooled_Invalid_Bytecode_No_Bit_Manip()
+    {
+        return EvmObjectFormatPSDouble.IsValidEof(InvalidBytecode, out _);
+    }
+
+    [Benchmark]
+    public bool Sequential_Pooled_Valid_Bytecode_Struct()
+    {
+        return EvmObjectFormatPSStruct.IsValidEof(ValidBytecode, out _);
+    }
+
+    [Benchmark]
+    public bool Sequential_Pooled_Invalid_Bytecode_Struct()
+    {
+        return EvmObjectFormatPSStruct.IsValidEof(InvalidBytecode, out _);
+    }
+
+    [Benchmark]
     public bool Sequential_Pooled_Valid_Bytecode_New()
     {
         return EvmObjectFormatPSOpt.IsValidEof(ValidBytecode, out _);
