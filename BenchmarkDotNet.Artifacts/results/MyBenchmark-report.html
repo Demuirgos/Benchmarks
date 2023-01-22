@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>MyBenchmark-20230118-123629</title>
+<title>MyBenchmark-20230122-170019</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -22,16 +22,16 @@ Intel Core i5-8265U CPU 1.60GHz (Whiskey Lake), 1 CPU, 8 logical and 4 physical 
 <pre><code></code></pre>
 
 <table>
-<thead><tr><th>                      Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Median</th><th>Gen0</th><th>Allocated</th>
+<thead><tr><th>                                   Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>Parallel_Stack_Valid_Bytecode</td><td>861.0 &mu;s</td><td>16.86 &mu;s</td><td>14.95 &mu;s</td><td>862.0 &mu;s</td><td>80.0781</td><td>250639 B</td>
-</tr><tr><td>Parallel_Stack_Invalid_Bytecode</td><td>414.0 &mu;s</td><td>8.15 &mu;s</td><td>17.89 &mu;s</td><td>415.6 &mu;s</td><td>41.5039</td><td>129813 B</td>
-</tr><tr><td>Parallel_Pooled_Valid_Bytecode</td><td>426.3 &mu;s</td><td>8.39 &mu;s</td><td>17.14 &mu;s</td><td>429.4 &mu;s</td><td>0.9766</td><td>3392 B</td>
-</tr><tr><td>Parallel_Pooled_Invalid_Bytecode</td><td>207.4 &mu;s</td><td>4.01 &mu;s</td><td>6.37 &mu;s</td><td>206.5 &mu;s</td><td>0.9766</td><td>3406 B</td>
-</tr><tr><td>Sequential_Stack_Valid_Bytecode</td><td>1,916.3 &mu;s</td><td>53.19 &mu;s</td><td>147.40 &mu;s</td><td>1,946.3 &mu;s</td><td>78.1250</td><td>246906 B</td>
-</tr><tr><td>Sequential_Stack_Invalid_Bytecode</td><td>1,080.2 &mu;s</td><td>22.78 &mu;s</td><td>63.88 &mu;s</td><td>1,078.9 &mu;s</td><td>41.0156</td><td>131694 B</td>
-</tr><tr><td>Sequential_Pooled_Valid_Bytecode</td><td>1,008.8 &mu;s</td><td>20.10 &mu;s</td><td>51.16 &mu;s</td><td>1,006.6 &mu;s</td><td>-</td><td>301 B</td>
-</tr><tr><td>Sequential_Pooled_Invalid_Bytecode</td><td>530.1 &mu;s</td><td>15.38 &mu;s</td><td>43.88 &mu;s</td><td>542.4 &mu;s</td><td>-</td><td>299 B</td>
+</thead><tbody><tr><td>Sequential_Pooled_Valid_Bytecode_Old</td><td>3.204 ms</td><td>0.0311 ms</td><td>0.0291 ms</td><td>777.3438</td><td>2448838 B</td>
+</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_Old</td><td>1.661 ms</td><td>0.0151 ms</td><td>0.0133 ms</td><td>388.6719</td><td>1224567 B</td>
+</tr><tr><td>Sequential_Pooled_Valid_Bytecode_No_Bit_Manip</td><td>2.126 ms</td><td>0.0206 ms</td><td>0.0193 ms</td><td>-</td><td>351 B</td>
+</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_No_Bit_Manip</td><td>1.097 ms</td><td>0.0179 ms</td><td>0.0256 ms</td><td>-</td><td>323 B</td>
+</tr><tr><td>Sequential_Pooled_Valid_Bytecode_Struct</td><td>2.364 ms</td><td>0.0321 ms</td><td>0.0300 ms</td><td>-</td><td>351 B</td>
+</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_Struct</td><td>1.228 ms</td><td>0.0103 ms</td><td>0.0091 ms</td><td>-</td><td>323 B</td>
+</tr><tr><td>Sequential_Pooled_Valid_Bytecode_New</td><td>NA</td><td>NA</td><td>NA</td><td>-</td><td>-</td>
+</tr><tr><td>Sequential_Pooled_Invalid_Bytecode_New</td><td>NA</td><td>NA</td><td>NA</td><td>-</td><td>-</td>
 </tr></tbody></table>
 </body>
 </html>
