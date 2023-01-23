@@ -9,13 +9,13 @@ Job=MediumRun  Toolchain=InProcessNoEmitToolchain  IterationCount=15
 LaunchCount=2  WarmupCount=10  
 
 ```
-|                                          Method |     Mean |     Error |    StdDev |     Gen0 | Allocated |
-|------------------------------------------------ |---------:|----------:|----------:|---------:|----------:|
-|            Sequential_Pooled_Valid_Bytecode_Old | 4.988 ms | 1.0679 ms | 1.5653 ms | 773.4375 | 2448844 B |
-|          Sequential_Pooled_Invalid_Bytecode_Old | 1.727 ms | 0.0991 ms | 0.1324 ms | 388.6719 | 1224567 B |
-|   Sequential_Pooled_Valid_Bytecode_No_Bit_Manip | 2.415 ms | 0.2789 ms | 0.4175 ms |        - |     351 B |
-| Sequential_Pooled_Invalid_Bytecode_No_Bit_Manip | 1.097 ms | 0.0346 ms | 0.0461 ms |        - |     324 B |
-|         Sequential_Pooled_Valid_Bytecode_Struct | 2.525 ms | 0.1997 ms | 0.2864 ms |        - |     352 B |
-|       Sequential_Pooled_Invalid_Bytecode_Struct | 1.231 ms | 0.0096 ms | 0.0138 ms |        - |     303 B |
-|            Sequential_Pooled_Valid_Bytecode_New | 2.164 ms | 0.0206 ms | 0.0296 ms |        - |     312 B |
-|          Sequential_Pooled_Invalid_Bytecode_New | 1.115 ms | 0.0082 ms | 0.0117 ms |        - |     304 B |
+|                                                                          Method |     Mean |     Error |    StdDev |   Median | Allocated |
+|-------------------------------------------------------------------------------- |---------:|----------:|----------:|---------:|----------:|
+|                                   Sequential_Pooled_Valid_Bytecode_No_Bit_Manip | 2.326 ms | 0.1365 ms | 0.2000 ms | 2.287 ms |     351 B |
+|                                 Sequential_Pooled_Invalid_Bytecode_No_Bit_Manip | 1.164 ms | 0.0777 ms | 0.1139 ms | 1.095 ms |     324 B |
+|   Sequential_Pooled_Valid_Bytecode_No_Bit_Manip_With_Opaque_ReachableCode_Check | 2.663 ms | 0.3935 ms | 0.5890 ms | 2.450 ms |     351 B |
+| Sequential_Pooled_Invalid_Bytecode_No_Bit_Manip_With_Opaque_ReachableCode_Check | 1.298 ms | 0.1471 ms | 0.2201 ms | 1.270 ms |     351 B |
+|                                         Sequential_Pooled_Valid_Bytecode_Struct | 2.752 ms | 0.1962 ms | 0.2876 ms | 2.694 ms |     360 B |
+|                                       Sequential_Pooled_Invalid_Bytecode_Struct | 1.488 ms | 0.2798 ms | 0.4188 ms | 1.322 ms |     324 B |
+|         Sequential_Pooled_Valid_Bytecode_Struct_With_Opaque_ReachableCode_Check | 2.715 ms | 0.2398 ms | 0.3590 ms | 2.565 ms |     354 B |
+|       Sequential_Pooled_Invalid_Bytecode_Struct_With_Opaque_ReachableCode_Check | 1.467 ms | 0.1098 ms | 0.1610 ms | 1.488 ms |     312 B |

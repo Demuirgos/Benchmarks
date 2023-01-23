@@ -11,19 +11,6 @@ public class MyBenchmark
     public byte[] ValidBytecode = ScenarioCase.GenerateFormatScenarios(Scenario.Valid);
     EofHeader dummy = new EofHeader();
 
-
-    [Benchmark]
-    public bool Sequential_Pooled_Valid_Bytecode_Old()
-    {
-        return EvmObjectFormatPSOld.IsValidEof(ValidBytecode, out _);
-    }
-
-    [Benchmark]
-    public bool Sequential_Pooled_Invalid_Bytecode_Old()
-    {
-        return EvmObjectFormatPSOld.IsValidEof(InvalidBytecode, out _);
-    }
-
     [Benchmark]
     public bool Sequential_Pooled_Valid_Bytecode_No_Bit_Manip()
     {
@@ -37,6 +24,19 @@ public class MyBenchmark
     }
 
     [Benchmark]
+    public bool Sequential_Pooled_Valid_Bytecode_No_Bit_Manip_With_Opaque_ReachableCode_Check()
+    {
+        return EvmObjectFormatPSDoubleReachableCodeOpt.IsValidEof(ValidBytecode, out _);
+    }
+
+    [Benchmark]
+    public bool Sequential_Pooled_Invalid_Bytecode_No_Bit_Manip_With_Opaque_ReachableCode_Check()
+    {
+        return EvmObjectFormatPSDoubleReachableCodeOpt.IsValidEof(InvalidBytecode, out _);
+    }
+
+    
+    [Benchmark]
     public bool Sequential_Pooled_Valid_Bytecode_Struct()
     {
         return EvmObjectFormatPSStruct.IsValidEof(ValidBytecode, out _);
@@ -49,16 +49,14 @@ public class MyBenchmark
     }
 
     [Benchmark]
-    public bool Sequential_Pooled_Valid_Bytecode_New()
+    public bool Sequential_Pooled_Valid_Bytecode_Struct_With_Opaque_ReachableCode_Check()
     {
-        return EvmObjectFormatPSOpt.IsValidEof(ValidBytecode, out _);
+        return EvmObjectFormatPSStructReachableCodeOpt.IsValidEof(ValidBytecode, out _);
     }
 
     [Benchmark]
-    public bool Sequential_Pooled_Invalid_Bytecode_New()
+    public bool Sequential_Pooled_Invalid_Bytecode_Struct_With_Opaque_ReachableCode_Check()
     {
-        return EvmObjectFormatPSOpt.IsValidEof(InvalidBytecode, out _);
+        return EvmObjectFormatPSStructReachableCodeOpt.IsValidEof(InvalidBytecode, out _);
     }
-
-
 }
